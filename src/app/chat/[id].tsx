@@ -136,7 +136,7 @@ export default function HumanChatScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.screen}
-      behavior="padding">
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
         {/* Header */}
         <View style={styles.header}>

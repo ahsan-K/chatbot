@@ -19,6 +19,7 @@ export interface Conversation {
 }
 
 let _conversations: Conversation[] = [];
+let _loaded = false;
 let _unsubscribe: (() => void) | null = null;
 const _subs = new Set<() => void>();
 
@@ -63,8 +64,8 @@ export function startContactsListener(myUid: string): () => void {
   // One-time fetch first — shows data immediately
   getDocs(q)
     .then(snap => {
-      console.log('[contacts] getDocs:', snap.docs.length);
       _conversations = sortConvs(snap.docs.map(mapDoc));
+      _loaded = true;
       notify();
     })
     .catch(e => console.error('[contacts] getDocs error:', e));
@@ -86,6 +87,17 @@ export function startContactsListener(myUid: string): () => void {
 export function stopContactsListener() {
   if (_unsubscribe) { _unsubscribe(); _unsubscribe = null; }
   _conversations = [];
+  _loaded = false;
+}
+
+export function useConversationsLoaded() {
+  const [loaded, setLoaded] = useState(() => _loaded);
+  useEffect(() => {
+    const fn = () => setLoaded(_loaded);
+    _subs.add(fn);
+    return () => void _subs.delete(fn);
+  }, []);
+  return loaded;
 }
 
 // Add contact manually (from Explore, before any message)

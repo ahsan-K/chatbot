@@ -19,6 +19,7 @@ import {
   Conversation,
   markRead,
   useConversations,
+  useConversationsLoaded,
 } from '@/store/conversations-store';
 
 function getInitials(name: string) {
@@ -84,9 +85,11 @@ export default function ConversationsScreen() {
   const user = useCurrentUser();
   const { user: firebaseUser } = useAuth();
   const conversations = useConversations();
+  const conversationsLoaded = useConversationsLoaded();
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
+
+  const loading = !conversationsLoaded;
 
   useEffect(() => {
     if (!firebaseUser) return;
@@ -95,7 +98,6 @@ export default function ConversationsScreen() {
 
   useEffect(() => {
     if (firebaseUser === null) { router.replace('/login'); return; }
-    if (firebaseUser) setLoading(false);
   }, [firebaseUser]);
 
   const filtered = conversations.filter(c =>
