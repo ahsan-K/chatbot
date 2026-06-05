@@ -107,6 +107,22 @@ service cloud.firestore {
       allow update: if request.auth != null
                     && convId.split('_').hasAny([request.auth.uid]);
     }
+
+    // Voice calls — sirf caller aur receiver access kar sakein
+    match /calls/{callId} {
+      allow read, write: if request.auth != null
+                         && (resource == null
+                             || resource.data.callerId == request.auth.uid
+                             || resource.data.receiverId == request.auth.uid);
+    }
+
+    match /calls/{callId}/callerCandidates/{candidateId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /calls/{callId}/receiverCandidates/{candidateId} {
+      allow read, write: if request.auth != null;
+    }
   }
 }
 ```

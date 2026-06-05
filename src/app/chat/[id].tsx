@@ -155,11 +155,8 @@ export default function HumanChatScreen() {
             </Text>
           </View>
           <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={() => router.push(`/call/${id}` as any)}>
               <Text style={styles.iconBtnText}>📞</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
-              <Text style={styles.iconBtnText}>📹</Text>
             </TouchableOpacity>
           </View>
         </View>

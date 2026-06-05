@@ -1,6 +1,6 @@
 import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider } from 'expo-router';
 import { useEffect } from 'react';
-import { AppState, Platform, useColorScheme } from 'react-native';
+import { Alert, AppState, Platform, useColorScheme } from 'react-native';
 
 // On web: handle browser popstate (back button / refresh) — always have a fallback route
 if (Platform.OS === 'web' && typeof window !== 'undefined') {
@@ -39,6 +39,7 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
 import * as Notifications from 'expo-notifications';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { useAuth } from '@/hooks/use-auth';
+import { listenForIncomingCalls, rejectCall } from '@/services/call-service';
 import { listenForIncomingMessages, registerForPushNotifications, showLocalNotification } from '@/services/notification-service';
 import { getUserProfile, setOnlineStatus } from '@/services/user-service';
 import { syncFromFirebaseUser, setCurrentUser } from '@/store/app-store';
@@ -80,11 +81,23 @@ export default function RootLayout() {
       const unsubNotif = listenForIncomingMessages(user.uid, (name, msg, senderUid) => {
         showLocalNotification(name, msg, senderUid);
       });
+      const unsubCalls = listenForIncomingCalls(user.uid, call => {
+        Alert.alert(
+          `📞 Incoming Call`,
+          `${call.callerName} call kar raha hai`,
+          [
+            { text: 'Reject', style: 'destructive', onPress: () => rejectCall(call.id) },
+            { text: 'Accept', onPress: () => router.push(`/call/${call.callerId}?callId=${call.id}` as any) },
+          ],
+          { cancelable: false }
+        );
+      });
       return () => {
         setOnlineStatus(user.uid, false);
         appStateSub.remove();
         unsubContacts();
         unsubNotif();
+        unsubCalls();
       };
     } else {
       stopContactsListener();
