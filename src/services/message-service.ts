@@ -184,9 +184,16 @@ export function listenToTyping(
   });
 }
 
-// Read receipts — mark messages from otherUid as read
-export async function markMessagesAsRead(convId: string, otherUid: string): Promise<void> {
+// Read receipts — mark messages from otherUid as read + reset unreadCount in Firestore
+export async function markMessagesAsRead(convId: string, myUid: string, otherUid: string): Promise<void> {
   try {
+    // Reset unreadCount in contacts so refresh doesn't show old unread count
+    await setDoc(
+      doc(db, 'contacts', myUid, 'list', otherUid),
+      { unreadCount: 0 },
+      { merge: true }
+    );
+
     const q = query(
       collection(db, 'messages', convId, 'msgs'),
       where('senderId', '==', otherUid)

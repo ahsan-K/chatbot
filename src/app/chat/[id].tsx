@@ -54,7 +54,7 @@ export default function HumanChatScreen() {
     const unsub = listenToMessages(firebaseUser.uid, id, msgs => {
       setMessages(msgs);
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
-      markMessagesAsRead(convId, id);
+      markMessagesAsRead(convId, firebaseUser.uid, id);
     });
     return unsub;
   }, [firebaseUser, id]);
@@ -79,7 +79,7 @@ export default function HumanChatScreen() {
   useEffect(() => {
     if (!firebaseUser) return;
     const convId = getConvId(firebaseUser.uid, id);
-    markMessagesAsRead(convId, id);
+    markMessagesAsRead(convId, firebaseUser.uid, id);
   }, [firebaseUser, id]);
 
   if (!otherUser || !me || !firebaseUser) return null;
