@@ -167,7 +167,8 @@ export function listenForIncomingCalls(
     snap.docChanges().forEach(change => {
       const d = change.doc.data() as CallData;
       if (change.type === 'added' && d.status === 'ringing') {
-        onCall({ id: change.doc.id, ...d });
+        onCall({ ...d, id: change.doc.id });
+      }
     });
   });
 }

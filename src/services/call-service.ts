@@ -144,7 +144,7 @@ export function listenForIncomingCalls(myUid: string, onCall: (call: CallData) =
   return onSnapshot(q, snap => {
     snap.docChanges().forEach(change => {
       const d = change.doc.data() as CallData;
-      if (change.type === 'added' && d.status === 'ringing') onCall({ id: change.doc.id, ...d });
+      if (change.type === 'added' && d.status === 'ringing') onCall({ ...d, id: change.doc.id });
     });
   });
 }
