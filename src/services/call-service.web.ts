@@ -163,10 +163,13 @@ export async function rejectCall(callId: string) {
 }
 
 export function toggleMute(): boolean {
-  if (!_localStream) return false;
-  const track = _localStream.getAudioTracks()[0];
-  if (track) { track.enabled = !track.enabled; return !track.enabled; }
-  return false;
+  const stream = _localStream;
+  if (!stream) return false;
+  const tracks = stream.getAudioTracks();
+  if (!tracks.length) return false;
+  const track = tracks[0];
+  track.enabled = !track.enabled;
+  return !track.enabled;
 }
 
 export function listenForIncomingCalls(myUid: string, onCall: (call: CallData) => void): () => void {

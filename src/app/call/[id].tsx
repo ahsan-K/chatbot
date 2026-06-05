@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -92,8 +93,18 @@ export default function CallScreen() {
     if (!incomingCallId) return;
     try {
       const unsub = await answerCall(incomingCallId);
-      unsubRef.current = unsub;
       setCallState('active');
+
+      // Listen for caller ending the call
+      const unsubStatus = onSnapshot(doc(db, 'calls', incomingCallId), snap => {
+        const data = snap.data();
+        if (data?.status === 'ended' || data?.status === 'rejected') {
+          setCallState('ended');
+          setTimeout(() => router.canGoBack() ? router.back() : router.replace('/conversations'), 800);
+        }
+      });
+
+      unsubRef.current = () => { unsub(); unsubStatus(); };
     } catch (e: any) {
       Alert.alert('Error', 'Call answer nahi hua: ' + (e?.message ?? ''));
       router.back();
@@ -171,13 +182,15 @@ export default function CallScreen() {
             <Text style={styles.controlLabel}>End</Text>
           </View>
 
-          {/* Speaker placeholder */}
-          <View style={styles.controlItem}>
-            <TouchableOpacity style={styles.controlBtn} activeOpacity={0.7}>
-              <Text style={styles.controlIcon}>🔊</Text>
-            </TouchableOpacity>
-            <Text style={styles.controlLabel}>Speaker</Text>
-          </View>
+          {/* Speaker - native only */}
+          {Platform.OS !== 'web' && (
+            <View style={styles.controlItem}>
+              <TouchableOpacity style={styles.controlBtn} activeOpacity={0.7}>
+                <Text style={styles.controlIcon}>🔊</Text>
+              </TouchableOpacity>
+              <Text style={styles.controlLabel}>Speaker</Text>
+            </View>
+          )}
         </View>
       </View>
     </SafeAreaView>
