@@ -9,6 +9,7 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
+import { PermissionsAndroid, Platform } from 'react-native';
 import { MediaStream, RTCIceCandidate, RTCPeerConnection, RTCSessionDescription, mediaDevices } from 'react-native-webrtc';
 
 import { db } from '@/config/firebase';
@@ -36,6 +37,9 @@ let _localStream: MediaStream | null = null;
 
 export async function getLocalAudioStream(): Promise<MediaStream> {
   if (_localStream) return _localStream;
+  if (Platform.OS === 'android') {
+    await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO);
+  }
   _localStream = await mediaDevices.getUserMedia({ audio: true, video: false }) as MediaStream;
   return _localStream;
 }

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   FlatList,
+  Image,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -145,9 +146,13 @@ export default function HumanChatScreen() {
           <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/conversations')} style={styles.backBtn} hitSlop={8}>
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
-          <View style={[styles.headerAvatar, { backgroundColor: other.color }]}>
-            <Text style={styles.headerAvatarText}>{getInitials(other.name)}</Text>
-          </View>
+          {other.photoURL ? (
+            <Image source={{ uri: other.photoURL }} style={styles.headerAvatarImg} />
+          ) : (
+            <View style={[styles.headerAvatar, { backgroundColor: other.color }]}>
+              <Text style={styles.headerAvatarText}>{getInitials(other.name)}</Text>
+            </View>
+          )}
           <View style={styles.headerInfo}>
             <Text style={styles.headerName} numberOfLines={1}>{other.name}</Text>
             <Text style={styles.headerStatus}>
@@ -231,6 +236,7 @@ const styles = StyleSheet.create({
     width: 44, height: 44, borderRadius: 22,
     alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
+  headerAvatarImg: { width: 44, height: 44, borderRadius: 22, flexShrink: 0 },
   headerAvatarText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
   headerInfo: { flex: 1 },
   headerName: { fontSize: 17, fontWeight: '700', color: '#FFFFFF' },

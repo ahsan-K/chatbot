@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -34,6 +35,7 @@ export default function CallScreen() {
   const [isMuted, setIsMuted] = useState(false);
   const [otherName, setOtherName] = useState('');
   const [otherColor, setOtherColor] = useState('#0059f7');
+  const [otherPhoto, setOtherPhoto] = useState<string | undefined>();
   const [duration, setDuration] = useState(0);
   const callId = useRef<string>(incomingCallId ?? '');
   const unsubRef = useRef<(() => void) | null>(null);
@@ -42,7 +44,7 @@ export default function CallScreen() {
   useEffect(() => {
     if (!firebaseUser || !me) return;
     getUserProfile(id).then(p => {
-      if (p) { setOtherName(p.name); setOtherColor(p.color); }
+      if (p) { setOtherName(p.name); setOtherColor(p.color); setOtherPhoto(p.photoURL); }
     });
     if (isIncoming) {
       handleAnswerCall();
@@ -128,9 +130,13 @@ export default function CallScreen() {
         {/* Avatar */}
         <View style={styles.avatarSection}>
           <View style={[styles.avatarRing, { borderColor: otherColor }]}>
-            <View style={[styles.avatar, { backgroundColor: otherColor }]}>
-              <Text style={styles.avatarText}>{getInitials(otherName)}</Text>
-            </View>
+            {otherPhoto ? (
+              <Image source={{ uri: otherPhoto }} style={styles.avatarImg} />
+            ) : (
+              <View style={[styles.avatar, { backgroundColor: otherColor }]}>
+                <Text style={styles.avatarText}>{getInitials(otherName)}</Text>
+              </View>
+            )}
           </View>
           <Text style={styles.name}>{otherName}</Text>
           <Text style={styles.status}>{statusText}</Text>
@@ -184,6 +190,7 @@ const styles = StyleSheet.create({
     width: 120, height: 120, borderRadius: 60,
     alignItems: 'center', justifyContent: 'center',
   },
+  avatarImg: { width: 120, height: 120, borderRadius: 60 },
   avatarText: { fontSize: 44, fontWeight: '700', color: '#FFFFFF' },
   name: { fontSize: 28, fontWeight: '800', color: '#FFFFFF' },
   status: { fontSize: 16, color: 'rgba(255,255,255,0.6)' },
