@@ -49,9 +49,11 @@ export default function HumanChatScreen() {
   useEffect(() => {
     if (!firebaseUser) return;
     markRead(id);
+    const convId = getConvId(firebaseUser.uid, id);
     const unsub = listenToMessages(firebaseUser.uid, id, msgs => {
       setMessages(msgs);
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
+      markMessagesAsRead(convId, id);
     });
     return unsub;
   }, [firebaseUser, id]);
@@ -134,7 +136,7 @@ export default function HumanChatScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.screen}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      behavior="padding">
       <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
         {/* Header */}
         <View style={styles.header}>

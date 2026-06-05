@@ -240,7 +240,7 @@ export default function SignupScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.mobileContainer}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      behavior="padding">
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.mobileHero}>
           <View style={[styles.circle, styles.circleTop]} />

@@ -191,7 +191,7 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.mobileContainer}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      behavior="padding">
       <SafeAreaView style={{ flex: 1 }}>
         {/* Mobile hero */}
         <View style={styles.mobileHero}>
