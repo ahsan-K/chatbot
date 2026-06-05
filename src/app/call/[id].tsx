@@ -58,9 +58,14 @@ export default function CallScreen() {
   }, []);
 
   async function initiateCall() {
-    if (!firebaseUser || !me) return;
+    console.log('[initiateCall] firebaseUser:', !!firebaseUser, 'me:', !!me, 'id:', id);
+    if (!firebaseUser || !me) {
+      console.log('[initiateCall] RETURNING EARLY - missing user data');
+      return;
+    }
     try {
       callId.current = `${getConvId(firebaseUser.uid, id)}_${Date.now()}`;
+      console.log('[initiateCall] Starting call, callId:', callId.current);
       const unsub = await startCall(callId.current, firebaseUser.uid, me.name, me.color, id, me.photoURL);
       setCallState('ringing');
 
