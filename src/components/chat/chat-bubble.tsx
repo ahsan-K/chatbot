@@ -187,7 +187,7 @@ function RightBubble({ message, avatarColor, avatarInitials, onMediaPress }: {
         <View style={styles.rightMeta}>
           <Text style={styles.timestamp}>{message.timestamp}</Text>
           <Text style={[styles.receipt, isRead && styles.receiptRead]}>
-            {isRead ? '✓✓' : '✓'}
+            ✓✓
           </Text>
         </View>
       </View>

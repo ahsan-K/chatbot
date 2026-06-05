@@ -1,13 +1,17 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
+  getDocs,
   increment,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
   setDoc,
+  where,
+  writeBatch,
 } from 'firebase/firestore';
 
 import { db } from '@/config/firebase';
@@ -142,7 +146,7 @@ export function listenToMessages(
           } as ChatMedia,
           sender: isMine ? 'me' : data.senderId,
           timestamp,
-          status: isMine ? ('read' as const) : undefined,
+          status: isMine ? (data.readAt ? ('read' as const) : ('sent' as const)) : undefined,
         };
       }
 
@@ -152,10 +156,49 @@ export function listenToMessages(
         text: data.text ?? '',
         sender: isMine ? 'me' : data.senderId,
         timestamp,
-        status: isMine ? ('read' as const) : undefined,
+        status: isMine ? (data.readAt ? ('read' as const) : ('sent' as const)) : undefined,
       };
     });
 
     onUpdate(msgs);
   });
+}
+
+// Typing indicator
+export function setTyping(convId: string, myUid: string, isTyping: boolean): void {
+  const ref = doc(db, 'typing', convId, 'users', myUid);
+  if (isTyping) {
+    setDoc(ref, { isTyping: true, updatedAt: serverTimestamp() });
+  } else {
+    deleteDoc(ref).catch(() => {});
+  }
+}
+
+export function listenToTyping(
+  convId: string,
+  otherUid: string,
+  cb: (isTyping: boolean) => void
+): () => void {
+  return onSnapshot(doc(db, 'typing', convId, 'users', otherUid), snap => {
+    cb(snap.exists() && snap.data()?.isTyping === true);
+  });
+}
+
+// Read receipts — mark messages from otherUid as read
+export async function markMessagesAsRead(convId: string, otherUid: string): Promise<void> {
+  try {
+    const q = query(
+      collection(db, 'messages', convId, 'msgs'),
+      where('senderId', '==', otherUid)
+    );
+    const snap = await getDocs(q);
+    if (snap.empty) return;
+    const batch = writeBatch(db);
+    snap.docs.forEach(d => {
+      if (!d.data().readAt) batch.update(d.ref, { readAt: serverTimestamp() });
+    });
+    await batch.commit();
+  } catch {
+    // Don't block UI if read receipt fails
+  }
 }

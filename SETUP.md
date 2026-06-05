@@ -89,6 +89,13 @@ service cloud.firestore {
                         || resource.data.to == request.auth.uid);
     }
 
+    // Typing indicators — sirf conversation participants dekh sakein
+    match /typing/{convId}/users/{uid} {
+      allow read: if request.auth != null
+                  && convId.split('_').hasAny([request.auth.uid]);
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
     // Messages — sirf conversation participants padh/likh sakein
     match /messages/{convId}/msgs/{msgId} {
       allow read: if request.auth != null
@@ -96,6 +103,9 @@ service cloud.firestore {
       allow create: if request.auth != null
                     && convId.split('_').hasAny([request.auth.uid])
                     && request.resource.data.senderId == request.auth.uid;
+      // update = read receipts (readAt field)
+      allow update: if request.auth != null
+                    && convId.split('_').hasAny([request.auth.uid]);
     }
   }
 }

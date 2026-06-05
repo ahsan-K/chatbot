@@ -16,9 +16,9 @@ import { ChatFooter } from '@/components/chat/chat-footer';
 import { MediaPreview } from '@/components/chat/media-preview';
 import { ChatMedia, ChatMessage } from '@/components/chat/types';
 import { useAuth } from '@/hooks/use-auth';
-import { getConvId, listenToMessages, sendMediaMessage, sendMessage } from '@/services/message-service';
+import { getConvId, listenToMessages, listenToTyping, markMessagesAsRead, sendMediaMessage, sendMessage, setTyping } from '@/services/message-service';
 import { uploadMedia } from '@/services/storage-service';
-import { getUserProfile, UserProfile } from '@/services/user-service';
+import { getUserProfile, listenToOnlineStatus, UserProfile } from '@/services/user-service';
 import { useCurrentUser } from '@/store/app-store';
 import { getConversation, markRead } from '@/store/conversations-store';
 
@@ -34,6 +34,9 @@ export default function HumanChatScreen() {
   const [otherUser, setOtherUser] = useState<UserProfile | null>(conv?.user ?? null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [previewMedia, setPreviewMedia] = useState<ChatMedia | null>(null);
+  const [isOtherTyping, setIsOtherTyping] = useState(false);
+  const [otherOnline, setOtherOnline] = useState(false);
+  const [otherLastSeen, setOtherLastSeen] = useState<Date | undefined>();
   const listRef = useRef<FlatList>(null);
 
   // Fallback: fetch user profile directly if conv not in store (e.g. on refresh)
@@ -53,12 +56,50 @@ export default function HumanChatScreen() {
     return unsub;
   }, [firebaseUser, id]);
 
+  // Listen to online status
+  useEffect(() => {
+    if (!id) return;
+    return listenToOnlineStatus(id, (online, lastSeen) => {
+      setOtherOnline(online);
+      setOtherLastSeen(lastSeen);
+    });
+  }, [id]);
+
+  // Listen to typing
+  useEffect(() => {
+    if (!firebaseUser) return;
+    const convId = getConvId(firebaseUser.uid, id);
+    return listenToTyping(convId, id, setIsOtherTyping);
+  }, [firebaseUser, id]);
+
+  // Mark messages as read when screen opens
+  useEffect(() => {
+    if (!firebaseUser) return;
+    const convId = getConvId(firebaseUser.uid, id);
+    markMessagesAsRead(convId, id);
+  }, [firebaseUser, id]);
+
   if (!otherUser || !me || !firebaseUser) return null;
 
   const other = otherUser;
 
+  function formatLastSeen(date?: Date): string {
+    if (!date) return '';
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    if (diff < 60000) return 'last seen just now';
+    if (diff < 3600000) return `last seen ${Math.floor(diff / 60000)}m ago`;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    if (date >= today) return `last seen today at ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+    const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+    if (date >= yesterday) return 'last seen yesterday';
+    return `last seen ${date.getDate()}/${date.getMonth() + 1}`;
+  }
+
   async function handleSend(text: string) {
     if (!firebaseUser || !me) return;
+    const convId = getConvId(firebaseUser.uid, other.uid);
+    setTyping(convId, firebaseUser.uid, false);
     try {
       await sendMessage(
         firebaseUser.uid,
@@ -105,7 +146,9 @@ export default function HumanChatScreen() {
           </View>
           <View style={styles.headerInfo}>
             <Text style={styles.headerName} numberOfLines={1}>{other.name}</Text>
-            <Text style={styles.headerUsername}>@{other.username}</Text>
+            <Text style={styles.headerStatus}>
+              {isOtherTyping ? 'typing...' : otherOnline ? 'Online' : formatLastSeen(otherLastSeen)}
+            </Text>
           </View>
           <View style={styles.headerActions}>
             <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
@@ -153,6 +196,11 @@ export default function HumanChatScreen() {
           onSendMedia={handleSendMedia}
           onQuickReply={() => {}}
           showQuickReplies={false}
+          onTypingChange={(typing) => {
+            if (!firebaseUser) return;
+            const convId = getConvId(firebaseUser.uid, id);
+            setTyping(convId, firebaseUser.uid, typing);
+          }}
         />
 
         <MediaPreview media={previewMedia} onClose={() => setPreviewMedia(null)} />
@@ -185,7 +233,7 @@ const styles = StyleSheet.create({
   headerAvatarText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
   headerInfo: { flex: 1 },
   headerName: { fontSize: 17, fontWeight: '700', color: '#FFFFFF' },
-  headerUsername: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 1 },
+  headerStatus: { fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 1 },
   headerActions: { flexDirection: 'row', gap: 4 },
   iconBtn: {
     width: 38, height: 38, borderRadius: 19,

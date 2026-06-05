@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import { MediaPicker } from './media-picker';
@@ -15,11 +15,13 @@ type Props = {
   onSendMedia: (media: ChatMedia) => void;
   onQuickReply: (reply: QuickReply) => void;
   showQuickReplies?: boolean;
+  onTypingChange?: (isTyping: boolean) => void;
 };
 
-export function ChatFooter({ onSend, onSendMedia, onQuickReply, showQuickReplies = true }: Props) {
+export function ChatFooter({ onSend, onSendMedia, onQuickReply, showQuickReplies = true, onTypingChange }: Props) {
   const [text, setText] = useState('');
   const [pickerVisible, setPickerVisible] = useState(false);
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function handleSend() {
     const trimmed = text.trim();
@@ -65,7 +67,14 @@ export function ChatFooter({ onSend, onSendMedia, onQuickReply, showQuickReplies
         <TextInput
           style={styles.input}
           value={text}
-          onChangeText={setText}
+          onChangeText={(val) => {
+            setText(val);
+            if (onTypingChange) {
+              onTypingChange(true);
+              if (typingTimer.current) clearTimeout(typingTimer.current);
+              typingTimer.current = setTimeout(() => onTypingChange(false), 2000);
+            }
+          }}
           placeholder="Type your message here..."
           placeholderTextColor="#9aa0aa"
           returnKeyType="send"

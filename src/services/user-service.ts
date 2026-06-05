@@ -12,6 +12,7 @@ import {
   setDoc,
   startAt,
   endAt,
+  updateDoc,
   where,
 } from 'firebase/firestore';
 
@@ -245,4 +246,26 @@ export function listenToPendingRequests(
     },
     err => console.error('[friendRequests] listener error:', err.code, err.message)
   );
+}
+
+// Online status
+export async function setOnlineStatus(uid: string, online: boolean): Promise<void> {
+  try {
+    await updateDoc(doc(db, 'users', uid), {
+      online,
+      lastSeen: serverTimestamp(),
+    });
+  } catch {}
+}
+
+export function listenToOnlineStatus(
+  uid: string,
+  cb: (online: boolean, lastSeen?: Date) => void
+): () => void {
+  return onSnapshot(doc(db, 'users', uid), snap => {
+    if (snap.exists()) {
+      const data = snap.data();
+      cb(data.online ?? false, data.lastSeen?.toDate?.());
+    }
+  });
 }

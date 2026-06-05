@@ -10,11 +10,13 @@ type Props = {
   onMediaSelected: (media: ChatMedia) => void;
 };
 
-const OPTIONS = [
-  { type: 'image' as const, emoji: '🖼️', label: 'Image', color: '#4361EE' },
-  { type: 'video' as const, emoji: '🎬', label: 'Video', color: '#7B2CBF' },
-  { type: 'audio' as const, emoji: '🎵', label: 'Audio', color: '#3C096C' },
-  { type: 'document' as const, emoji: '📄', label: 'Document', color: '#2d6a4f' },
+const OPTIONS: Array<{ type: 'image' | 'video' | 'audio' | 'document' | 'selfie' | 'record'; emoji: string; label: string; color: string }> = [
+  { type: 'image', emoji: '🖼️', label: 'Image', color: '#4361EE' },
+  { type: 'video', emoji: '🎬', label: 'Video', color: '#7B2CBF' },
+  { type: 'audio', emoji: '🎵', label: 'Audio', color: '#3C096C' },
+  { type: 'document', emoji: '📄', label: 'Document', color: '#2d6a4f' },
+  { type: 'selfie', emoji: '🤳', label: 'Selfie', color: '#e63946' },
+  { type: 'record', emoji: '🎥', label: 'Record', color: '#f4a261' },
 ];
 
 export function MediaPicker({ visible, onClose, onMediaSelected }: Props) {
@@ -83,12 +85,41 @@ export function MediaPicker({ visible, onClose, onMediaSelected }: Props) {
     onClose();
   }
 
-  function handleOption(type: 'image' | 'video' | 'audio' | 'document') {
+  async function takeSelfie() {
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: 'images',
+      cameraType: ImagePicker.CameraType.front,
+      quality: 0.85,
+      allowsEditing: false,
+    });
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      onMediaSelected({ type: 'image', uri: asset.uri, name: asset.fileName ?? 'selfie.jpg', mimeType: asset.mimeType ?? 'image/jpeg' });
+    }
+    onClose();
+  }
+
+  async function recordVideo() {
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: 'videos',
+      videoMaxDuration: 120,
+      cameraType: ImagePicker.CameraType.back,
+    });
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      onMediaSelected({ type: 'video', uri: asset.uri, name: asset.fileName ?? 'video.mp4', mimeType: asset.mimeType ?? 'video/mp4' });
+    }
+    onClose();
+  }
+
+  function handleOption(type: 'image' | 'video' | 'audio' | 'document' | 'selfie' | 'record') {
     switch (type) {
       case 'image': return pickImage();
       case 'video': return pickVideo();
       case 'audio': return pickAudio();
       case 'document': return pickDocument();
+      case 'selfie': return takeSelfie();
+      case 'record': return recordVideo();
     }
   }
 
@@ -151,11 +182,12 @@ const styles = StyleSheet.create({
   },
   grid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     gap: 12,
   },
   option: {
-    flex: 1,
+    width: '30%',
     alignItems: 'center',
     gap: 8,
   },

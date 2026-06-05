@@ -1,6 +1,6 @@
 import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider } from 'expo-router';
 import { useEffect } from 'react';
-import { Platform, useColorScheme } from 'react-native';
+import { AppState, Platform, useColorScheme } from 'react-native';
 
 // On web: handle browser popstate (back button / refresh) — always have a fallback route
 if (Platform.OS === 'web' && typeof window !== 'undefined') {
@@ -40,7 +40,7 @@ import * as Notifications from 'expo-notifications';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { useAuth } from '@/hooks/use-auth';
 import { listenForIncomingMessages, registerForPushNotifications, showLocalNotification } from '@/services/notification-service';
-import { getUserProfile } from '@/services/user-service';
+import { getUserProfile, setOnlineStatus } from '@/services/user-service';
 import { syncFromFirebaseUser, setCurrentUser } from '@/store/app-store';
 import { startContactsListener, stopContactsListener } from '@/store/conversations-store';
 
@@ -71,11 +71,20 @@ export default function RootLayout() {
         }
       });
       registerForPushNotifications(user.uid);
+      setOnlineStatus(user.uid, true);
+      const appStateSub = AppState.addEventListener('change', state => {
+        setOnlineStatus(user.uid, state === 'active');
+      });
       const unsubContacts = startContactsListener(user.uid);
       const unsubNotif = listenForIncomingMessages(user.uid, (name, msg, senderUid) => {
         showLocalNotification(name, msg, senderUid);
       });
-      return () => { unsubContacts(); unsubNotif(); };
+      return () => {
+        setOnlineStatus(user.uid, false);
+        appStateSub.remove();
+        unsubContacts();
+        unsubNotif();
+      };
     } else {
       stopContactsListener();
     }
