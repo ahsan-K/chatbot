@@ -1,23 +1,20 @@
 *,
 *:focus,
 *:focus-visible,
-*:focus-within {
+*:focus-within,
+*:active {
   outline: none !important;
+  outline-width: 0 !important;
   box-shadow: none !important;
   -webkit-tap-highlight-color: transparent !important;
 }
 
 input,
-input:focus,
-input:focus-visible,
 textarea,
-textarea:focus,
 [contenteditable],
-[contenteditable]:focus,
-[role="textbox"],
-[role="textbox"]:focus,
-div:focus {
+[role="textbox"] {
   outline: none !important;
+  outline-width: 0 !important;
   box-shadow: none !important;
   -webkit-appearance: none !important;
 }

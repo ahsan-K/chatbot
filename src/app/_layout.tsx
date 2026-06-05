@@ -1,6 +1,28 @@
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import { Platform, useColorScheme } from 'react-native';
+
+// Inject CSS directly into DOM — removes all browser focus rings globally
+if (Platform.OS === 'web' && typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.textContent = `
+    *:focus, *:focus-visible, *:focus-within {
+      outline: none !important;
+      outline-width: 0 !important;
+      box-shadow: none !important;
+      -webkit-box-shadow: none !important;
+    }
+    input, input:focus, input:focus-visible,
+    textarea, textarea:focus,
+    select, select:focus {
+      outline: none !important;
+      outline-width: 0 !important;
+      box-shadow: none !important;
+      -webkit-box-shadow: none !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { useAuth } from '@/hooks/use-auth';

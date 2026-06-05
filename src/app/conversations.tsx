@@ -120,21 +120,23 @@ export default function ConversationsScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.searchBar}>
-          <Text style={styles.searchIcon}>🔍</Text>
-          <TextInput
-            style={styles.searchInput}
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search..."
-            placeholderTextColor="#aaa"
-          />
-          {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')} hitSlop={8}>
-              <Text style={styles.clearIcon}>✕</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+        {conversations.length > 0 && (
+          <View style={styles.searchBar}>
+            <Text style={styles.searchIcon}>🔍</Text>
+            <TextInput
+              style={styles.searchInput}
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Search..."
+              placeholderTextColor="#aaa"
+            />
+            {search.length > 0 && (
+              <TouchableOpacity onPress={() => setSearch('')} hitSlop={8}>
+                <Text style={styles.clearIcon}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
       </SafeAreaView>
 
       {loading && (
@@ -206,7 +208,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   searchIcon: { fontSize: 15 },
-  searchInput: { flex: 1, fontSize: 15, color: '#222', padding: 0, margin: 0 },
+  searchInput: { flex: 1, fontSize: 15, color: '#222', padding: 0, margin: 0, outlineWidth: 0 } as any,
   clearIcon: { fontSize: 13, color: '#888' },
 
   item: {

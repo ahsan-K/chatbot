@@ -160,7 +160,8 @@ const styles = StyleSheet.create({
     color: '#444444',
     padding: 0,
     margin: 0,
-  },
+    outlineWidth: 0,
+  } as any,
   sendBtn: {
     width: 28,
     height: 28,

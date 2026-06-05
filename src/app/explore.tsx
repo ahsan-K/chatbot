@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 12, gap: 8,
   },
   searchAtSign: { fontSize: 16 },
-  searchInput: { flex: 1, fontSize: 16, color: '#FFFFFF', padding: 0, margin: 0 },
+  searchInput: { flex: 1, fontSize: 16, color: '#FFFFFF', padding: 0, margin: 0, outlineWidth: 0 } as any,
   list: { padding: 16, gap: 0 },
   emptyContainer: { flex: 1 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 80 },
