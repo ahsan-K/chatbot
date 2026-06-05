@@ -16,8 +16,6 @@ export async function uploadProfileImage(uri: string, uid: string): Promise<stri
   }
   formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
   formData.append('folder', `chatapp/profiles/${uid}`);
-  formData.append('public_id', uid);
-  formData.append('overwrite', 'true');
 
   const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
     method: 'POST', body: formData,
