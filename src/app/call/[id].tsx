@@ -42,7 +42,11 @@ export default function CallScreen() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    if (!firebaseUser || !me) return;
+    console.log('[CallScreen] useEffect RUNNING, id:', id, 'isIncoming:', isIncoming, 'user:', !!firebaseUser, 'me:', !!me);
+    if (!firebaseUser || !me) {
+      console.log('[CallScreen] EARLY RETURN - no user');
+      return;
+    }
     getUserProfile(id).then(p => {
       if (p) { setOtherName(p.name); setOtherColor(p.color); setOtherPhoto(p.photoURL); }
     });
