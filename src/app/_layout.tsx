@@ -49,9 +49,13 @@ function IncomingCallOverlay({ call, onAccept, onReject }: {
     <View style={overlayStyles.overlay}>
       <View style={overlayStyles.card}>
         <Text style={overlayStyles.callLabel}>📞 Incoming Call</Text>
-        <View style={[overlayStyles.avatar, { backgroundColor: call.callerColor }]}>
-          <Text style={overlayStyles.avatarText}>{getInitials(call.callerName)}</Text>
-        </View>
+        {call.callerPhotoURL ? (
+          <Image source={{ uri: call.callerPhotoURL }} style={overlayStyles.avatarImg} />
+        ) : (
+          <View style={[overlayStyles.avatar, { backgroundColor: call.callerColor }]}>
+            <Text style={overlayStyles.avatarText}>{getInitials(call.callerName)}</Text>
+          </View>
+        )}
         <Text style={overlayStyles.callerName}>{call.callerName}</Text>
         <Text style={overlayStyles.callerSub}>is calling you...</Text>
         <View style={overlayStyles.btnRow}>
@@ -89,6 +93,7 @@ const overlayStyles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 3, borderColor: 'rgba(255,255,255,0.3)',
   },
+  avatarImg: { width: 90, height: 90, borderRadius: 45, borderWidth: 3, borderColor: 'rgba(255,255,255,0.3)' },
   avatarText: { fontSize: 32, fontWeight: '700', color: '#FFFFFF' },
   callerName: { fontSize: 24, fontWeight: '800', color: '#FFFFFF' },
   callerSub: { fontSize: 14, color: 'rgba(255,255,255,0.5)' },

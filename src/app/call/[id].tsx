@@ -61,7 +61,7 @@ export default function CallScreen() {
     if (!firebaseUser || !me) return;
     try {
       callId.current = `${getConvId(firebaseUser.uid, id)}_${Date.now()}`;
-      const unsub = await startCall(callId.current, firebaseUser.uid, me.name, me.color, id);
+      const unsub = await startCall(callId.current, firebaseUser.uid, me.name, me.color, id, me.photoURL);
       setCallState('ringing');
 
       // Listen to call document for status changes (active/ended/rejected)

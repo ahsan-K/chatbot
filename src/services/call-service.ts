@@ -17,6 +17,7 @@ export interface CallData {
   callerId: string;
   callerName: string;
   callerColor: string;
+  callerPhotoURL?: string | null;
   receiverId: string;
   status: 'ringing' | 'active' | 'ended' | 'rejected';
   offer?: any;
@@ -61,7 +62,8 @@ export async function startCall(
   myUid: string,
   myName: string,
   myColor: string,
-  otherUid: string
+  otherUid: string,
+  myPhotoURL?: string
 ): Promise<() => void> {
   _pc = new RTCPeerConnection(STUN);
   const stream = await getLocalAudioStream();
@@ -78,6 +80,7 @@ export async function startCall(
 
   await setDoc(doc(db, 'calls', callId), {
     callerId: myUid, callerName: myName, callerColor: myColor,
+    callerPhotoURL: myPhotoURL ?? null,
     receiverId: otherUid, status: 'ringing',
     offer: { type: offer.type, sdp: offer.sdp },
     createdAt: new Date().toISOString(),
