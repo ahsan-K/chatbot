@@ -99,6 +99,10 @@ export default function ProfileScreen() {
   }
 
   function showPhotoOptions() {
+    if (Platform.OS === 'web') {
+      pickPhoto();
+      return;
+    }
     Alert.alert('Profile Photo', 'Kahan se lena hai?', [
       { text: 'Gallery', onPress: pickPhoto },
       { text: 'Camera', onPress: takePhoto },
