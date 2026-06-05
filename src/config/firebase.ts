@@ -1,9 +1,7 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getApps, initializeApp } from 'firebase/app';
-import { getAuth, getReactNativePersistence, initializeAuth } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import { Platform } from 'react-native';
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -17,19 +15,7 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
-// Native platforms need AsyncStorage for auth persistence (login stays after app restart)
-export const auth =
-  Platform.OS === 'web'
-    ? getAuth(app)
-    : (() => {
-        try {
-          return initializeAuth(app, {
-            persistence: getReactNativePersistence(AsyncStorage),
-          });
-        } catch {
-          return getAuth(app); // Already initialized
-        }
-      })();
+export const auth = getAuth(app);
 
 export const db = getFirestore(app);
 export const storage = getStorage(app);
