@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/hooks/use-auth';
+import { changePassword, parseAuthError } from '@/services/auth-service';
 import { uploadProfileImage } from '@/services/storage-service';
 import { getUserProfile, updateUserProfile } from '@/services/user-service';
 import { setCurrentUser, useCurrentUser } from '@/store/app-store';
@@ -30,19 +31,23 @@ export default function ProfileScreen() {
   const me = useCurrentUser();
 
   const [name, setName] = useState(me?.name ?? '');
-  const [color, setColor] = useState(me?.color ?? '#4361EE');
+  const [color] = useState(me?.color ?? '#4361EE');
   const [photoURL, setPhotoURL] = useState<string | undefined>(me?.photoURL);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showPassSection, setShowPassSection] = useState(false);
+  const [currentPass, setCurrentPass] = useState('');
+  const [newPass, setNewPass] = useState('');
+  const [confirmPass, setConfirmPass] = useState('');
+  const [changingPass, setChangingPass] = useState(false);
 
   useEffect(() => {
     if (!firebaseUser) return;
     getUserProfile(firebaseUser.uid).then(p => {
       if (!p) return;
       setName(p.name);
-      setColor(p.color);
       setPhotoURL(p.photoURL);
       setUsername(p.username);
       setEmail(p.email);
@@ -51,36 +56,21 @@ export default function ProfileScreen() {
 
   async function pickPhoto() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Gallery access allow karo.');
-      return;
-    }
+    if (status !== 'granted') { Alert.alert('Permission needed', 'Gallery access allow karo.'); return; }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images',
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
+      mediaTypes: 'images', allowsEditing: true, aspect: [1, 1], quality: 0.8,
     });
-    if (!result.canceled && result.assets[0]) {
-      await uploadPhoto(result.assets[0].uri);
-    }
+    if (!result.canceled && result.assets[0]) await uploadPhoto(result.assets[0].uri);
   }
 
   async function takePhoto() {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Camera access allow karo.');
-      return;
-    }
+    if (status !== 'granted') { Alert.alert('Permission needed', 'Camera access allow karo.'); return; }
     const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
+      allowsEditing: true, aspect: [1, 1], quality: 0.8,
       cameraType: ImagePicker.CameraType.front,
     });
-    if (!result.canceled && result.assets[0]) {
-      await uploadPhoto(result.assets[0].uri);
-    }
+    if (!result.canceled && result.assets[0]) await uploadPhoto(result.assets[0].uri);
   }
 
   async function uploadPhoto(uri: string) {
@@ -97,10 +87,7 @@ export default function ProfileScreen() {
   }
 
   function showPhotoOptions() {
-    if (Platform.OS === 'web') {
-      pickPhoto();
-      return;
-    }
+    if (Platform.OS === 'web') { pickPhoto(); return; }
     Alert.alert('Profile Photo', 'Kahan se lena hai?', [
       { text: 'Gallery', onPress: pickPhoto },
       { text: 'Camera', onPress: takePhoto },
@@ -114,15 +101,8 @@ export default function ProfileScreen() {
     try {
       const updates: { name: string; photoURL?: string } = { name: name.trim() };
       if (photoURL) updates.photoURL = photoURL;
-
       await updateUserProfile(firebaseUser.uid, updates);
-      setCurrentUser({
-        id: firebaseUser.uid,
-        name: updates.name,
-        username,
-        color,
-        photoURL,
-      });
+      setCurrentUser({ id: firebaseUser.uid, name: updates.name, username, color, photoURL });
       Alert.alert('Saved', 'Profile update ho gaya!');
       router.canGoBack() ? router.back() : router.replace('/conversations');
     } catch (e: any) {
@@ -132,33 +112,41 @@ export default function ProfileScreen() {
     }
   }
 
+  async function handleChangePassword() {
+    if (!newPass || !currentPass) { Alert.alert('Error', 'Sab fields bharein.'); return; }
+    if (newPass.length < 6) { Alert.alert('Error', 'Password kam az kam 6 characters ka hona chahiye.'); return; }
+    if (newPass !== confirmPass) { Alert.alert('Error', 'Passwords match nahi karte.'); return; }
+    setChangingPass(true);
+    try {
+      await changePassword(currentPass, newPass);
+      setCurrentPass(''); setNewPass(''); setConfirmPass('');
+      setShowPassSection(false);
+      Alert.alert('Done', 'Password change ho gaya!');
+    } catch (e: any) {
+      Alert.alert('Error', parseAuthError(e?.code) ?? e?.message ?? 'Password change nahi hua.');
+    } finally {
+      setChangingPass(false);
+    }
+  }
+
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* Hero */}
+        <View style={styles.hero}>
+          <View style={[styles.circle, styles.circleTop]} />
+          <View style={[styles.circle, styles.circleBottom]} />
+          <TouchableOpacity
+            onPress={() => router.canGoBack() ? router.back() : router.replace('/conversations')}
+            style={styles.backBtn} hitSlop={8}>
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Edit Profile</Text>
-          <TouchableOpacity
-            onPress={handleSave}
-            disabled={saving || uploading}
-            style={styles.saveBtn}>
-            {saving
-              ? <ActivityIndicator size="small" color="#FFFFFF" />
-              : <Text style={styles.saveBtnText}>Save</Text>}
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-          {/* Avatar */}
-          <TouchableOpacity style={styles.avatarWrap} onPress={showPhotoOptions} activeOpacity={0.8}>
+          <TouchableOpacity onPress={showPhotoOptions} activeOpacity={0.85} style={styles.avatarWrap}>
             {uploading ? (
-              <View style={[styles.avatarCircle, { backgroundColor: color, justifyContent: 'center', alignItems: 'center' }]}>
-                <ActivityIndicator color="#FFFFFF" />
+              <View style={[styles.avatarCircle, { backgroundColor: color }]}>
+                <ActivityIndicator color="#fff" />
               </View>
             ) : photoURL ? (
               <Image source={{ uri: photoURL }} style={styles.avatarImage} />
@@ -167,119 +155,200 @@ export default function ProfileScreen() {
                 <Text style={styles.avatarInitials}>{getInitials(name)}</Text>
               </View>
             )}
-            <View style={styles.cameraBtn}>
-              <Text style={styles.cameraIcon}>📷</Text>
-            </View>
+            <View style={styles.cameraBtn}><Text style={styles.cameraIcon}>📷</Text></View>
           </TouchableOpacity>
-          <Text style={styles.avatarHint}>Photo change karne ke liye tap karo</Text>
+          <Text style={styles.heroName}>{name || 'Your Name'}</Text>
+          <Text style={styles.heroUsername}>@{username}</Text>
+        </View>
 
-          {/* Name */}
-          <View style={styles.section}>
-            <Text style={styles.label}>Name</Text>
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder="Your name"
-              placeholderTextColor="#aaa"
-              maxLength={30}
-            />
-          </View>
+        {/* Form */}
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Edit Profile</Text>
 
-          {/* Readonly fields */}
-          <View style={styles.section}>
-            <Text style={styles.label}>Username</Text>
-            <View style={styles.readonlyField}>
-              <Text style={styles.readonlyText}>@{username}</Text>
-              <Text style={styles.readonlyBadge}>Cannot change</Text>
+            <View style={styles.inputWrap}>
+              <Text style={styles.inputIcon}>👤</Text>
+              <TextInput
+                style={styles.input}
+                value={name}
+                onChangeText={setName}
+                placeholder="Your name"
+                placeholderTextColor="#aaa"
+                maxLength={30}
+              />
             </View>
-          </View>
 
-          <View style={styles.section}>
-            <Text style={styles.label}>Email</Text>
-            <View style={styles.readonlyField}>
+            <View style={[styles.inputWrap, styles.readonlyWrap]}>
+              <Text style={styles.inputIcon}>@</Text>
+              <Text style={styles.readonlyText}>{username}</Text>
+              <Text style={styles.readonlyBadge}>Fixed</Text>
+            </View>
+
+            <View style={[styles.inputWrap, styles.readonlyWrap]}>
+              <Text style={styles.inputIcon}>✉️</Text>
               <Text style={styles.readonlyText}>{email}</Text>
-              <Text style={styles.readonlyBadge}>Cannot change</Text>
+              <Text style={styles.readonlyBadge}>Fixed</Text>
             </View>
+
+            <TouchableOpacity
+              style={[styles.btn, (saving || uploading) && styles.btnOff]}
+              onPress={handleSave}
+              disabled={saving || uploading}
+              activeOpacity={0.85}>
+              {saving
+                ? <ActivityIndicator color="#fff" />
+                : <Text style={styles.btnText}>Save Changes</Text>}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.changePassBtn}
+              onPress={() => setShowPassSection(v => !v)}
+              activeOpacity={0.7}>
+              <Text style={styles.changePassText}>🔒 Change Password</Text>
+              <Text style={styles.chevron}>{showPassSection ? '▲' : '▼'}</Text>
+            </TouchableOpacity>
+
+            {showPassSection && (
+              <View style={styles.passSection}>
+                <View style={styles.inputWrap}>
+                  <Text style={styles.inputIcon}>🔑</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={currentPass}
+                    onChangeText={setCurrentPass}
+                    placeholder="Current password"
+                    placeholderTextColor="#aaa"
+                    secureTextEntry
+                  />
+                </View>
+                <View style={styles.inputWrap}>
+                  <Text style={styles.inputIcon}>🔒</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={newPass}
+                    onChangeText={setNewPass}
+                    placeholder="New password (min 6 chars)"
+                    placeholderTextColor="#aaa"
+                    secureTextEntry
+                  />
+                </View>
+                <View style={[
+                  styles.inputWrap,
+                  confirmPass.length > 0 && newPass !== confirmPass && styles.inputError,
+                ]}>
+                  <Text style={styles.inputIcon}>🔒</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={confirmPass}
+                    onChangeText={setConfirmPass}
+                    placeholder="Confirm new password"
+                    placeholderTextColor="#aaa"
+                    secureTextEntry
+                  />
+                  {confirmPass.length > 0 && (
+                    <Text style={{ fontSize: 15 }}>{newPass === confirmPass ? '✅' : '❌'}</Text>
+                  )}
+                </View>
+                <TouchableOpacity
+                  style={[styles.btn, changingPass && styles.btnOff]}
+                  onPress={handleChangePassword}
+                  disabled={changingPass}
+                  activeOpacity={0.85}>
+                  {changingPass
+                    ? <ActivityIndicator color="#fff" />
+                    : <Text style={styles.btnText}>Update Password</Text>}
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f8f9fa' },
+  container: { flex: 1, backgroundColor: '#4361EE' },
 
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#4361EE',
-    paddingHorizontal: 16, paddingVertical: 12, gap: 12,
-  },
-  backBtn: { padding: 4 },
-  backIcon: { fontSize: 22, color: '#FFFFFF', fontWeight: '700' },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
-  saveBtn: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20,
-    minWidth: 60, alignItems: 'center',
-  },
-  saveBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
-
-  body: { padding: 24, gap: 8, paddingBottom: 48 },
-
-  avatarWrap: { alignSelf: 'center', marginBottom: 8, position: 'relative' },
-  avatarCircle: {
-    width: 100, height: 100, borderRadius: 50,
+  hero: {
     alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2, shadowRadius: 8, elevation: 6,
+    paddingTop: 16, paddingBottom: 24,
+    gap: 4, overflow: 'hidden', position: 'relative',
+  },
+  backBtn: { position: 'absolute', top: 12, left: 16 },
+  backIcon: { fontSize: 22, color: '#FFFFFF', fontWeight: '700' },
+  circle: { position: 'absolute', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.08)' },
+  circleTop: { width: 300, height: 300, top: -100, right: -80 },
+  circleBottom: { width: 250, height: 250, bottom: -80, left: -60 },
+
+  avatarWrap: { position: 'relative', marginBottom: 4 },
+  avatarCircle: {
+    width: 90, height: 90, borderRadius: 45,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 3, borderColor: 'rgba(255,255,255,0.4)',
   },
   avatarImage: {
-    width: 100, height: 100, borderRadius: 50,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2, shadowRadius: 8,
+    width: 90, height: 90, borderRadius: 45,
+    borderWidth: 3, borderColor: 'rgba(255,255,255,0.4)',
   },
-  avatarInitials: { fontSize: 36, fontWeight: '700', color: '#FFFFFF' },
+  avatarInitials: { fontSize: 32, fontWeight: '700', color: '#FFFFFF' },
   cameraBtn: {
     position: 'absolute', bottom: 0, right: 0,
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15, shadowRadius: 4, elevation: 4,
+    width: 28, height: 28, borderRadius: 14,
+    backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center',
   },
-  cameraIcon: { fontSize: 16 },
-  avatarHint: { textAlign: 'center', fontSize: 12, color: '#aaa', marginBottom: 8 },
+  cameraIcon: { fontSize: 14 },
+  heroName: { fontSize: 20, fontWeight: '800', color: '#FFFFFF' },
+  heroUsername: { fontSize: 13, color: 'rgba(255,255,255,0.7)' },
 
-  section: { gap: 8, marginTop: 16 },
-  label: { fontSize: 12, fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: 0.5 },
-
-  input: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14,
-    fontSize: 16, color: '#222',
-    borderWidth: 1.5, borderColor: '#e8ebf0',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04, shadowRadius: 2, elevation: 1,
+  scroll: {
+    backgroundColor: '#f0f2ff',
+    borderTopLeftRadius: 32, borderTopRightRadius: 32,
+    padding: 24, paddingBottom: 48,
+    alignItems: 'center',
   },
-
-  colorRow: { flexDirection: 'row', gap: 12 },
-  colorDot: {
-    width: 38, height: 38, borderRadius: 19,
-    borderWidth: 3, borderColor: 'transparent',
+  card: {
+    backgroundColor: '#fff', borderRadius: 24, padding: 28,
+    width: '100%', maxWidth: 480,
+    shadowColor: '#4361EE', shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1, shadowRadius: 24, elevation: 8, gap: 12,
   },
-  colorSelected: { borderColor: '#222', transform: [{ scale: 1.15 }] },
+  cardTitle: { fontSize: 22, fontWeight: '800', color: '#111', letterSpacing: -0.5 },
 
-  readonlyField: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    borderWidth: 1.5, borderColor: '#e8ebf0',
+  inputWrap: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#f5f6fa', borderRadius: 14,
+    paddingHorizontal: 16, paddingVertical: 13,
+    gap: 10, borderWidth: 1.5, borderColor: '#eee',
   },
-  readonlyText: { fontSize: 16, color: '#888' },
+  inputError: { borderColor: '#e63946' },
+  readonlyWrap: { opacity: 0.6 },
+  inputIcon: { fontSize: 16 },
+  input: { flex: 1, fontSize: 15, color: '#222', padding: 0, margin: 0, outlineWidth: 0 } as any,
+  readonlyText: { flex: 1, fontSize: 15, color: '#888' },
   readonlyBadge: {
     fontSize: 11, color: '#aaa',
-    backgroundColor: '#f3f5f6', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
+    backgroundColor: '#ebebeb', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
   },
+
+  btn: {
+    backgroundColor: '#4361EE', borderRadius: 14, paddingVertical: 15,
+    alignItems: 'center', marginTop: 4,
+    shadowColor: '#4361EE', shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3, shadowRadius: 12, elevation: 6,
+  },
+  btnOff: { backgroundColor: '#c0c7d0', shadowOpacity: 0 },
+  btnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
+
+  changePassBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  changePassText: { fontSize: 14, fontWeight: '600', color: '#4361EE' },
+  chevron: { fontSize: 11, color: '#aaa' },
+  passSection: { gap: 10 },
 });

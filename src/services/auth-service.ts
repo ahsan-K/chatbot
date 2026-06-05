@@ -1,8 +1,11 @@
 import {
   createUserWithEmailAndPassword,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
+  updatePassword,
   updateProfile,
 } from 'firebase/auth';
 
@@ -25,6 +28,14 @@ export async function logout() {
 
 export async function resetPassword(email: string) {
   await sendPasswordResetEmail(auth, email);
+}
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  const user = auth.currentUser;
+  if (!user?.email) throw new Error('No user logged in');
+  const credential = EmailAuthProvider.credential(user.email, currentPassword);
+  await reauthenticateWithCredential(user, credential);
+  await updatePassword(user, newPassword);
 }
 
 export function parseAuthError(code: string): string {
