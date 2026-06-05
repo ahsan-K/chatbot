@@ -66,12 +66,14 @@ export async function startCall(
   myPhotoURL?: string
 ): Promise<() => void> {
   // Step 1: Immediately notify receiver
+  console.log('[call] Creating call doc, receiverId:', otherUid);
   await setDoc(doc(db, 'calls', callId), {
     callerId: myUid, callerName: myName, callerColor: myColor,
     callerPhotoURL: myPhotoURL ?? null,
     receiverId: otherUid, status: 'ringing',
     offer: null, createdAt: new Date().toISOString(),
   });
+  console.log('[call] Doc created, callId:', callId);
 
   // Step 2: Get mic and create offer
   _pc = new RTCPeerConnection(STUN);
@@ -94,6 +96,7 @@ export async function startCall(
 
   const unsubAnswer = onSnapshot(doc(db, 'calls', callId), async snap => {
     const data = snap.data();
+    console.log('[call] Doc snapshot:', data?.status, 'callId:', callId);
     if (data?.answer && _pc && !_pc.remoteDescription) {
       await _pc.setRemoteDescription(new RTCSessionDescription(data.answer));
     }
@@ -149,6 +152,7 @@ export async function answerCall(callId: string): Promise<() => void> {
 }
 
 export async function endCall(callId: string) {
+  console.log('[call] endCall called, callId:', callId, new Error().stack?.split('\n')[2]);
   if (_pc) { _pc.close(); _pc = null; }
   stopLocalStream();
   await updateDoc(doc(db, 'calls', callId), { status: 'ended' }).catch(() => {});
