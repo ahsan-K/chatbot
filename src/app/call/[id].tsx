@@ -182,15 +182,13 @@ export default function CallScreen() {
             <Text style={styles.controlLabel}>End</Text>
           </View>
 
-          {/* Speaker - native only */}
-          {Platform.OS !== 'web' && (
-            <View style={styles.controlItem}>
-              <TouchableOpacity style={styles.controlBtn} activeOpacity={0.7}>
-                <Text style={styles.controlIcon}>🔊</Text>
-              </TouchableOpacity>
-              <Text style={styles.controlLabel}>Speaker</Text>
-            </View>
-          )}
+          {/* Speaker */}
+          <View style={styles.controlItem}>
+            <TouchableOpacity style={styles.controlBtn} activeOpacity={0.7}>
+              <Text style={styles.controlIcon}>🔊</Text>
+            </TouchableOpacity>
+            <Text style={styles.controlLabel}>Speaker</Text>
+          </View>
         </View>
       </View>
     </SafeAreaView>
