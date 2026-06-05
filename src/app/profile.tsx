@@ -21,8 +21,6 @@ import { uploadProfileImage } from '@/services/storage-service';
 import { getUserProfile, updateUserProfile } from '@/services/user-service';
 import { setCurrentUser, useCurrentUser } from '@/store/app-store';
 
-const COLORS = ['#4361EE', '#7B2CBF', '#e63946', '#2d6a4f', '#f4a261', '#3a86ff'];
-
 function getInitials(name: string) {
   return name.trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
 }
@@ -32,7 +30,7 @@ export default function ProfileScreen() {
   const me = useCurrentUser();
 
   const [name, setName] = useState(me?.name ?? '');
-  const [color, setColor] = useState(me?.color ?? COLORS[0]);
+  const [color, setColor] = useState(me?.color ?? '#4361EE');
   const [photoURL, setPhotoURL] = useState<string | undefined>(me?.photoURL);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -114,10 +112,7 @@ export default function ProfileScreen() {
     if (!firebaseUser || !name.trim()) return;
     setSaving(true);
     try {
-      const updates: { name: string; color: string; photoURL?: string } = {
-        name: name.trim(),
-        color,
-      };
+      const updates: { name: string; photoURL?: string } = { name: name.trim() };
       if (photoURL) updates.photoURL = photoURL;
 
       await updateUserProfile(firebaseUser.uid, updates);
@@ -129,7 +124,7 @@ export default function ProfileScreen() {
         photoURL,
       });
       Alert.alert('Saved', 'Profile update ho gaya!');
-      router.back();
+      router.canGoBack() ? router.back() : router.replace('/conversations');
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Save nahi hua.');
     } finally {
@@ -189,21 +184,6 @@ export default function ProfileScreen() {
               placeholderTextColor="#aaa"
               maxLength={30}
             />
-          </View>
-
-          {/* Color */}
-          <View style={styles.section}>
-            <Text style={styles.label}>Avatar Color</Text>
-            <View style={styles.colorRow}>
-              {COLORS.map(c => (
-                <TouchableOpacity
-                  key={c}
-                  onPress={() => setColor(c)}
-                  activeOpacity={0.8}
-                  style={[styles.colorDot, { backgroundColor: c }, color === c && styles.colorSelected]}
-                />
-              ))}
-            </View>
           </View>
 
           {/* Readonly fields */}
