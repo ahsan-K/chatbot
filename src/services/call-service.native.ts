@@ -161,14 +161,13 @@ export function listenForIncomingCalls(
 ): () => void {
   const q = query(
     collection(db, 'calls'),
-    where('receiverId', '==', myUid),
-    where('status', '==', 'ringing')
+    where('receiverId', '==', myUid)
   );
   return onSnapshot(q, snap => {
     snap.docChanges().forEach(change => {
-      if (change.type === 'added') {
-        onCall({ id: change.doc.id, ...change.doc.data() } as CallData);
-      }
+      const d = change.doc.data() as CallData;
+      if (change.type === 'added' && d.status === 'ringing') {
+        onCall({ id: change.doc.id, ...d });
     });
   });
 }
