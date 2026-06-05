@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -128,8 +129,9 @@ export default function HumanChatScreen() {
         media,
         url
       );
-    } catch (e) {
+    } catch (e: any) {
       console.error('Media send failed:', e);
+      Alert.alert('Upload Failed', e?.message ?? 'Media send nahi hui. Dobara try karein.');
     }
   }
 
