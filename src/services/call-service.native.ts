@@ -70,6 +70,19 @@ export async function startCall(
   otherUid: string,
   myPhotoURL?: string
 ): Promise<() => void> {
+  // Step 1: Immediately notify receiver BEFORE getting mic (so they see call right away)
+  await setDoc(doc(db, 'calls', callId), {
+    callerId: myUid,
+    callerName: myName,
+    callerColor: myColor,
+    callerPhotoURL: myPhotoURL ?? null,
+    receiverId: otherUid,
+    status: 'ringing',
+    offer: null,
+    createdAt: new Date().toISOString(),
+  });
+
+  // Step 2: Get mic and create WebRTC offer
   _pc = new RTCPeerConnection(STUN);
   const stream = await getLocalAudioStream();
   stream.getTracks().forEach(t => _pc!.addTrack(t, stream));
@@ -93,15 +106,9 @@ export async function startCall(
   const offer = await _pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: false } as any);
   await _pc.setLocalDescription(new RTCSessionDescription(offer));
 
-  await setDoc(doc(db, 'calls', callId), {
-    callerId: myUid,
-    callerName: myName,
-    callerColor: myColor,
-    callerPhotoURL: myPhotoURL ?? null,
-    receiverId: otherUid,
-    status: 'ringing',
+  // Step 3: Update call document with offer
+  await updateDoc(doc(db, 'calls', callId), {
     offer: { type: offer.type, sdp: offer.sdp },
-    createdAt: new Date().toISOString(),
   });
 
   const unsubAnswer = onSnapshot(doc(db, 'calls', callId), async snap => {
@@ -139,8 +146,15 @@ export async function answerCall(callId: string): Promise<() => void> {
     }
   };
 
-  const callSnap = await getDoc(doc(db, 'calls', callId));
-  const callData = callSnap.data();
+  // Wait for offer to be available
+  let callData = (await getDoc(doc(db, 'calls', callId))).data();
+  if (!callData?.offer) {
+    await new Promise<void>(resolve => {
+      const unsub = onSnapshot(doc(db, 'calls', callId), snap => {
+        if (snap.data()?.offer) { unsub(); resolve(); callData = snap.data(); }
+      });
+    });
+  }
   await _pc.setRemoteDescription(new RTCSessionDescription(callData!.offer));
 
   const answer = await _pc.createAnswer();
