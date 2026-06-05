@@ -141,14 +141,14 @@ export default function FriendsScreen() {
         </View>
       ) : (
         <SectionList
-          sections={sections}
-          keyExtractor={(item, i) => ('id' in item ? item.id : (item as any).user?.uid ?? String(i))}
-          renderSectionHeader={({ section }) => (
+          sections={sections as any}
+          keyExtractor={(item: any, i) => (item.id ?? item.user?.uid ?? String(i))}
+          renderSectionHeader={({ section }: any) => (
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>{section.title}</Text>
             </View>
           )}
-          renderItem={({ item, section }) => {
+          renderItem={({ item, section }: any) => {
             if (section.type === 'requests') {
               const req = item as FriendRequest;
               return (

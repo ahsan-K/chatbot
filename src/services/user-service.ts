@@ -5,15 +5,12 @@ import {
   getDoc,
   getDocs,
   onSnapshot,
-  orderBy,
   query,
   runTransaction,
   serverTimestamp,
   setDoc,
-  startAt,
-  endAt,
   updateDoc,
-  where,
+  where
 } from 'firebase/firestore';
 
 import { db } from '@/config/firebase';
@@ -24,6 +21,8 @@ export interface UserProfile {
   username: string;
   email: string;
   color: string;
+  photoURL?: string;
+  online?: boolean;
 }
 
 const AVATAR_COLORS = ['#4361EE', '#7B2CBF', '#e63946', '#2d6a4f', '#f4a261', '#3a86ff'];
@@ -153,6 +152,14 @@ export async function getContacts(myUid: string): Promise<UserProfile[]> {
 export async function isContact(myUid: string, otherUid: string): Promise<boolean> {
   const snap = await getDoc(doc(db, 'contacts', myUid, 'list', otherUid));
   return snap.exists();
+}
+
+// Update user profile fields (name, color, photoURL)
+export async function updateUserProfile(
+  uid: string,
+  updates: { name?: string; color?: string; photoURL?: string }
+): Promise<void> {
+  await updateDoc(doc(db, 'users', uid), updates);
 }
 
 // ── Friend Requests ──────────────────────────────────────────────────────────

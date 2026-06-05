@@ -6,6 +6,7 @@ export interface AppUser {
   name: string;
   username?: string;
   color: string;
+  photoURL?: string;
 }
 
 const AVATAR_COLORS = ['#4361EE', '#7B2CBF', '#e63946', '#2d6a4f', '#f4a261', '#3a86ff'];

@@ -34,8 +34,6 @@ function VideoPreview({ uri }: { uri: string }) {
       player={player}
       style={styles.videoView}
       contentFit="contain"
-      allowsFullscreen
-      allowsPictureInPicture
     />
   );
 }

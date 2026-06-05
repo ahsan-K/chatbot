@@ -197,8 +197,6 @@ export default function ExploreScreen() {
                 {search.trim() ? 'Try a different username' : 'Be the first to sign up!'}
               </Text>
             </View>
-          ) : null /* searching spinner shown in header */ ? (
-            <View style={styles.empty}></View>
           ) : null
         }
       />

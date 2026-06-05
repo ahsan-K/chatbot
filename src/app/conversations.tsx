@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   StyleSheet,
   Text,
   TextInput,
@@ -111,9 +112,15 @@ export default function ConversationsScreen() {
     <View style={styles.screen}>
       <SafeAreaView edges={['top']} style={{ backgroundColor: '#FFFFFF' }}>
         <View style={styles.header}>
-          <View style={[styles.myAvatar, { backgroundColor: user?.color ?? '#4361EE' }]}>
-            <Text style={styles.myAvatarText}>{myIni}</Text>
-          </View>
+          <TouchableOpacity onPress={() => router.push('/profile')} activeOpacity={0.8}>
+            {user?.photoURL ? (
+              <Image source={{ uri: user.photoURL }} style={styles.myAvatarImg} />
+            ) : (
+              <View style={[styles.myAvatar, { backgroundColor: user?.color ?? '#4361EE' }]}>
+                <Text style={styles.myAvatarText}>{myIni}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
           <Text style={styles.headerTitle}>Messages</Text>
           <TouchableOpacity
             onPress={() => router.push('/friends')}
@@ -213,6 +220,7 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: 20,
     alignItems: 'center', justifyContent: 'center',
   },
+  myAvatarImg: { width: 40, height: 40, borderRadius: 20 },
   myAvatarText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
   headerTitle: { flex: 1, fontSize: 22, fontWeight: '800', color: '#111' },
 

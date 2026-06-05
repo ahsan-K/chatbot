@@ -67,6 +67,7 @@ export default function RootLayout() {
             name: profile.name,
             username: profile.username,
             color: profile.color,
+            photoURL: profile.photoURL,
           });
         }
       });
