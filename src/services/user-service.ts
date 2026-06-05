@@ -1,8 +1,10 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
+  onSnapshot,
   orderBy,
   query,
   runTransaction,
@@ -61,6 +63,43 @@ export async function createUserProfile(
   });
 }
 
+// Get all users — reads usernames collection (public) then fetches each profile
+export async function getAllUsers(currentUid: string): Promise<UserProfile[]> {
+  console.log('[getAllUsers] step 1 — reading usernames...');
+  let snap: any;
+  try {
+    snap = await getDocs(collection(db, 'usernames'));
+    console.log('[getAllUsers] step 1 OK — docs:', snap.size);
+  } catch (e: any) {
+    console.error('[getAllUsers] step 1 FAILED (usernames):', e.code, e.message);
+    throw e;
+  }
+
+  const uids = snap.docs
+    .map((d: any) => d.data().uid as string)
+    .filter((uid: string) => uid && uid !== currentUid);
+
+  console.log('[getAllUsers] step 2 — fetching profiles for:', uids);
+  if (uids.length === 0) return [];
+
+  const profiles = await Promise.all(
+    uids.map(async (uid: string) => {
+      try {
+        const d = await getDoc(doc(db, 'users', uid));
+        console.log('[getAllUsers] profile', uid, d.exists() ? 'OK' : 'missing');
+        return d;
+      } catch (e: any) {
+        console.error('[getAllUsers] step 2 FAILED (user', uid, '):', e.code, e.message);
+        throw e;
+      }
+    })
+  );
+
+  return profiles
+    .filter((d: any) => d.exists())
+    .map((d: any) => d.data() as UserProfile);
+}
+
 // Get full user profile from Firestore
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   const snap = await getDoc(doc(db, 'users', uid));
@@ -74,13 +113,15 @@ export async function searchUsersByUsername(
 ): Promise<UserProfile[]> {
   if (!term.trim()) return [];
   const lower = term.toLowerCase();
-  const end = lower.slice(0, -1) + String.fromCharCode(lower.charCodeAt(lower.length - 1) + 1);
+
+  // Prefix search: increment last char for upper bound
+  // e.g. 'ahsan' -> '>= ahsan' AND '< ahsao'
+  const upperBound = lower.slice(0, lower.length - 1) + String.fromCharCode(lower.charCodeAt(lower.length - 1) + 1);
 
   const q = query(
     collection(db, 'users'),
-    orderBy('username'),
-    startAt(lower),
-    endAt(end)
+    where('username', '>=', lower),
+    where('username', '<', upperBound)
   );
   const snap = await getDocs(q);
   return snap.docs
@@ -111,4 +152,97 @@ export async function getContacts(myUid: string): Promise<UserProfile[]> {
 export async function isContact(myUid: string, otherUid: string): Promise<boolean> {
   const snap = await getDoc(doc(db, 'contacts', myUid, 'list', otherUid));
   return snap.exists();
+}
+
+// ── Friend Requests ──────────────────────────────────────────────────────────
+
+export type FriendRequestStatus = 'none' | 'sent' | 'received' | 'friends';
+
+export interface FriendRequest {
+  id: string;
+  from: string;
+  to: string;
+  fromName: string;
+  fromUsername: string;
+  fromColor: string;
+  createdAt: any;
+}
+
+export async function sendFriendRequest(myUid: string, myProfile: UserProfile, other: UserProfile) {
+  await setDoc(doc(db, 'friendRequests', `${myUid}_${other.uid}`), {
+    from: myUid,
+    to: other.uid,
+    fromName: myProfile.name,
+    fromUsername: myProfile.username,
+    fromColor: myProfile.color,
+    status: 'pending',
+    createdAt: serverTimestamp(),
+  });
+}
+
+export async function cancelFriendRequest(myUid: string, otherUid: string) {
+  await deleteDoc(doc(db, 'friendRequests', `${myUid}_${otherUid}`));
+}
+
+export async function acceptFriendRequest(
+  requestId: string,
+  fromUid: string,
+  toUid: string,
+  fromProfile: UserProfile,
+  toProfile: UserProfile
+) {
+  await runTransaction(db, async (tx) => {
+    tx.update(doc(db, 'friendRequests', requestId), { status: 'accepted' });
+    tx.set(doc(db, 'contacts', toUid, 'list', fromUid), {
+      uid: fromUid, name: fromProfile.name, username: fromProfile.username,
+      color: fromProfile.color, addedAt: serverTimestamp(),
+      lastMessageAt: serverTimestamp(), unreadCount: 0,
+    });
+    tx.set(doc(db, 'contacts', fromUid, 'list', toUid), {
+      uid: toUid, name: toProfile.name, username: toProfile.username,
+      color: toProfile.color, addedAt: serverTimestamp(),
+      lastMessageAt: serverTimestamp(), unreadCount: 0,
+    });
+  });
+}
+
+export async function rejectFriendRequest(requestId: string) {
+  await deleteDoc(doc(db, 'friendRequests', requestId));
+}
+
+export async function getFriendRequestStatus(
+  myUid: string,
+  otherUid: string
+): Promise<FriendRequestStatus> {
+  const [sentSnap, receivedSnap, contactSnap] = await Promise.all([
+    getDoc(doc(db, 'friendRequests', `${myUid}_${otherUid}`)),
+    getDoc(doc(db, 'friendRequests', `${otherUid}_${myUid}`)),
+    getDoc(doc(db, 'contacts', myUid, 'list', otherUid)),
+  ]);
+  if (contactSnap.exists()) return 'friends';
+  if (sentSnap.exists() && sentSnap.data()?.status === 'pending') return 'sent';
+  if (receivedSnap.exists() && receivedSnap.data()?.status === 'pending') return 'received';
+  return 'none';
+}
+
+export function listenToPendingRequests(
+  myUid: string,
+  cb: (requests: FriendRequest[]) => void
+): () => void {
+  // Single where clause — no composite index needed
+  // Filter 'pending' client-side to avoid index requirement
+  const q = query(
+    collection(db, 'friendRequests'),
+    where('to', '==', myUid)
+  );
+  return onSnapshot(
+    q,
+    snap => {
+      const pending = snap.docs
+        .map(d => ({ id: d.id, ...d.data() } as FriendRequest))
+        .filter(r => (r as any).status === 'pending');
+      cb(pending);
+    },
+    err => console.error('[friendRequests] listener error:', err.code, err.message)
+  );
 }

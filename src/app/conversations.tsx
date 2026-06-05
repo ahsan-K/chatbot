@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/hooks/use-auth';
 import { logout } from '@/services/auth-service';
+import { listenToPendingRequests } from '@/services/user-service';
 import { useCurrentUser } from '@/store/app-store';
 import {
   Conversation,
@@ -85,6 +86,12 @@ export default function ConversationsScreen() {
   const conversations = useConversations();
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    if (!firebaseUser) return;
+    return listenToPendingRequests(firebaseUser.uid, reqs => setPendingCount(reqs.length));
+  }, [firebaseUser]);
 
   useEffect(() => {
     if (firebaseUser === null) { router.replace('/login'); return; }
@@ -106,6 +113,17 @@ export default function ConversationsScreen() {
             <Text style={styles.myAvatarText}>{myIni}</Text>
           </View>
           <Text style={styles.headerTitle}>Messages</Text>
+          <TouchableOpacity
+            onPress={() => router.push('/friends')}
+            style={styles.exploreBtn}
+            hitSlop={8}>
+            <Text style={styles.exploreBtnText}>🤝</Text>
+            {pendingCount > 0 && (
+              <View style={styles.notifBadge}>
+                <Text style={styles.notifBadgeText}>{pendingCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push('/explore')}
             style={styles.exploreBtn}
@@ -247,6 +265,13 @@ const styles = StyleSheet.create({
   },
   badgeText: { fontSize: 11, fontWeight: '700', color: '#FFFFFF' },
   separator: { height: StyleSheet.hairlineWidth, backgroundColor: '#f0f0f0', marginLeft: 80 },
+  notifBadge: {
+    position: 'absolute', top: -4, right: -4,
+    backgroundColor: '#e63946', borderRadius: 8,
+    minWidth: 16, height: 16, paddingHorizontal: 3,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  notifBadgeText: { fontSize: 10, fontWeight: '800', color: '#FFFFFF' },
   logoutBtn: {
     width: 38, height: 38, borderRadius: 19,
     backgroundColor: '#fff3f3',
@@ -267,6 +292,7 @@ const styles = StyleSheet.create({
     width: 38, height: 38, borderRadius: 19,
     backgroundColor: '#eef0ff',
     alignItems: 'center', justifyContent: 'center',
+    position: 'relative',
   },
   exploreBtnText: { fontSize: 18 },
 });

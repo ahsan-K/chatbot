@@ -41,10 +41,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // User profiles — koi bhi logged-in user padh sake (search ke liye)
-    // Sirf apna profile update kar sake
+    // User profiles
+    // get  = single document read (getUserProfile)
+    // list = collection query (getAllUsers / search in Explore)
     match /users/{uid} {
-      allow read: if request.auth != null;
+      allow get, list: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == uid;
     }
 
@@ -63,10 +64,29 @@ service cloud.firestore {
                          && request.auth.uid == userId;
     }
 
-    // Sender apna entry receiver ke contacts mein update kar sake (last message ke liye)
+    // Sender apna entry receiver ke contacts mein update/create kar sake
+    // (last message preview + unread count ke liye)
     match /contacts/{receiverId}/list/{senderId} {
-      allow update: if request.auth != null
-                    && request.auth.uid == senderId;
+      allow update, create: if request.auth != null
+                    && (request.auth.uid == senderId || request.auth.uid == receiverId);
+    }
+
+    // Friend Requests
+    // get  = single doc read (non-existent bhi) — requestId se check karo
+    //        resource null ho sakta hai (doc exist nahi karta), isliye requestId use karo
+    // list = collection query (onSnapshot) — sirf existing docs, resource.data safe hai
+    match /friendRequests/{requestId} {
+      allow get: if request.auth != null
+                 && (requestId.split('_')[0] == request.auth.uid
+                     || requestId.split('_')[1] == request.auth.uid);
+      allow list: if request.auth != null
+                  && (resource.data.from == request.auth.uid
+                      || resource.data.to == request.auth.uid);
+      allow create: if request.auth != null
+                    && request.resource.data.from == request.auth.uid;
+      allow update, delete: if request.auth != null
+                    && (resource.data.from == request.auth.uid
+                        || resource.data.to == request.auth.uid);
     }
 
     // Messages — sirf conversation participants padh/likh sakein
@@ -205,6 +225,15 @@ messages/{uid1_uid2}/msgs/{msgId}
   ├── mediaMime: string (optional)
   ├── senderId: string
   └── timestamp: timestamp
+
+friendRequests/{fromUid_toUid}
+  ├── from: string (sender uid)
+  ├── to: string (receiver uid)
+  ├── fromName: string
+  ├── fromUsername: string
+  ├── fromColor: string
+  ├── status: 'pending' | 'accepted'
+  └── createdAt: timestamp
 ```
 
 > **Note:** Conversation ID = `[uid1, uid2].sort().join('_')` — alphabetically sorted so both users use same document path.

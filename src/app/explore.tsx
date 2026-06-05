@@ -14,20 +14,51 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/hooks/use-auth';
 import {
-  addContact,
-  isContact,
+  FriendRequestStatus,
+  cancelFriendRequest,
+  acceptFriendRequest,
+  getAllUsers,
+  getFriendRequestStatus,
+  getUserProfile,
+  rejectFriendRequest,
+  sendFriendRequest,
   searchUsersByUsername,
   UserProfile,
 } from '@/services/user-service';
-import { addContactToStore } from '@/store/conversations-store';
+import { useCurrentUser } from '@/store/app-store';
 
 function getInitials(name: string) {
   return name.trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 }
 
-function UserCard({ user, onAdd, added, adding }: {
-  user: UserProfile; onAdd: () => void; added: boolean; adding: boolean;
+function UserCard({ user, status, onAction, loading }: {
+  user: UserProfile;
+  status: FriendRequestStatus;
+  onAction: () => void;
+  loading: boolean;
 }) {
+  const btnStyle = status === 'friends'
+    ? styles.btnFriends
+    : status === 'sent'
+    ? styles.btnPending
+    : status === 'received'
+    ? styles.btnAccept
+    : styles.btnAdd;
+
+  const btnLabel = status === 'friends'
+    ? 'Friends ✓'
+    : status === 'sent'
+    ? 'Pending'
+    : status === 'received'
+    ? 'Accept'
+    : '+ Add';
+
+  const btnTextStyle = status === 'friends'
+    ? styles.btnTextFriends
+    : status === 'received'
+    ? styles.btnTextAccept
+    : styles.btnTextDefault;
+
   return (
     <View style={styles.card}>
       <View style={[styles.avatar, { backgroundColor: user.color }]}>
@@ -38,15 +69,13 @@ function UserCard({ user, onAdd, added, adding }: {
         <Text style={styles.cardUsername}>@{user.username}</Text>
       </View>
       <TouchableOpacity
-        style={[styles.addBtn, added && styles.addedBtn]}
-        onPress={onAdd}
-        disabled={added || adding}
+        style={[styles.btn, btnStyle]}
+        onPress={onAction}
+        disabled={status === 'friends' || loading}
         activeOpacity={0.7}>
-        {adding
+        {loading
           ? <ActivityIndicator size="small" color="#4361EE" />
-          : <Text style={[styles.addBtnText, added && styles.addedBtnText]}>
-              {added ? 'Added ✓' : '+ Add'}
-            </Text>}
+          : <Text style={[styles.btnText, btnTextStyle]}>{btnLabel}</Text>}
       </TouchableOpacity>
     </View>
   );
@@ -54,44 +83,76 @@ function UserCard({ user, onAdd, added, adding }: {
 
 export default function ExploreScreen() {
   const { user: firebaseUser } = useAuth();
+  const me = useCurrentUser();
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<UserProfile[]>([]);
+  const [statuses, setStatuses] = useState<Record<string, FriendRequestStatus>>({});
   const [searching, setSearching] = useState(false);
-  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
-  const [addingId, setAddingId] = useState<string | null>(null);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
 
+  const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
+
+  // Load all users ONCE on mount — then filter client-side (instant, no index needed)
   useEffect(() => {
-    if (!search.trim() || !firebaseUser) { setResults([]); return; }
-    setSearching(true);
-    const timer = setTimeout(async () => {
-      try {
-        const found = await searchUsersByUsername(search, firebaseUser.uid);
-        const checks = await Promise.all(found.map(u => isContact(firebaseUser.uid, u.uid)));
-        setResults(found);
-        const added = new Set<string>();
-        found.forEach((u, i) => { if (checks[i]) added.add(u.uid); });
-        setAddedIds(added);
-      } catch { setResults([]); }
-      finally { setSearching(false); }
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [search, firebaseUser]);
-
-  async function handleAdd(user: UserProfile) {
     if (!firebaseUser) return;
-    setAddingId(user.uid);
+    setSearching(true);
+    getAllUsers(firebaseUser.uid)
+      .then(async users => {
+        setAllUsers(users);
+        const statusList = await Promise.all(
+          users.map(u => getFriendRequestStatus(firebaseUser.uid, u.uid))
+        );
+        const map: Record<string, FriendRequestStatus> = {};
+        users.forEach((u, i) => { map[u.uid] = statusList[i]; });
+        setStatuses(map);
+        setResults(users);
+      })
+      .catch(e => console.error('[explore] load error:', e))
+      .finally(() => setSearching(false));
+  }, [firebaseUser]);
+
+  // Client-side instant filter as user types
+  useEffect(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) {
+      setResults(allUsers);
+      return;
+    }
+    setResults(allUsers.filter(u =>
+      u.username.includes(q) || u.name.toLowerCase().includes(q)
+    ));
+  }, [search, allUsers]);
+
+  async function handleAction(user: UserProfile) {
+    if (!firebaseUser || !me) return;
+    const status = statuses[user.uid] ?? 'none';
+    setLoadingId(user.uid);
     try {
-      await addContact(firebaseUser.uid, user);
-      addContactToStore(user);
-      setAddedIds(prev => new Set([...prev, user.uid]));
-    } finally { setAddingId(null); }
+      if (status === 'none') {
+        const myProfile = await getUserProfile(firebaseUser.uid);
+        if (myProfile) await sendFriendRequest(firebaseUser.uid, myProfile, user);
+        setStatuses(prev => ({ ...prev, [user.uid]: 'sent' }));
+      } else if (status === 'sent') {
+        await cancelFriendRequest(firebaseUser.uid, user.uid);
+        setStatuses(prev => ({ ...prev, [user.uid]: 'none' }));
+      } else if (status === 'received') {
+        const reqId = `${user.uid}_${firebaseUser.uid}`;
+        const myProfile = await getUserProfile(firebaseUser.uid);
+        if (myProfile) {
+          await acceptFriendRequest(reqId, user.uid, firebaseUser.uid, user, myProfile);
+        }
+        setStatuses(prev => ({ ...prev, [user.uid]: 'friends' }));
+      }
+    } finally { setLoadingId(null); }
   }
 
   return (
     <View style={styles.screen}>
       <SafeAreaView edges={['top']} style={{ backgroundColor: '#4361EE' }}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
+          <TouchableOpacity
+            onPress={() => router.canGoBack() ? router.back() : router.replace('/conversations')}
+            hitSlop={8}>
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Find People</Text>
@@ -118,26 +179,26 @@ export default function ExploreScreen() {
         renderItem={({ item }) => (
           <UserCard
             user={item}
-            added={addedIds.has(item.uid)}
-            adding={addingId === item.uid}
-            onAdd={() => handleAdd(item)}
+            status={statuses[item.uid] ?? 'none'}
+            loading={loadingId === item.uid}
+            onAction={() => handleAction(item)}
           />
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         contentContainerStyle={results.length === 0 ? styles.emptyContainer : styles.list}
         ListEmptyComponent={
-          search.trim() && !searching ? (
+          !searching ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyEmoji}>🔍</Text>
-              <Text style={styles.emptyTitle}>No users found</Text>
-              <Text style={styles.emptyHint}>Try a different username</Text>
+              <Text style={styles.emptyEmoji}>{search.trim() ? '🔍' : '👥'}</Text>
+              <Text style={styles.emptyTitle}>
+                {search.trim() ? 'No users found' : 'No users yet'}
+              </Text>
+              <Text style={styles.emptyHint}>
+                {search.trim() ? 'Try a different username' : 'Be the first to sign up!'}
+              </Text>
             </View>
-          ) : !search.trim() ? (
-            <View style={styles.empty}>
-              <Text style={styles.emptyEmoji}>👥</Text>
-              <Text style={styles.emptyTitle}>Find people to chat with</Text>
-              <Text style={styles.emptyHint}>Type a @username to search</Text>
-            </View>
+          ) : null /* searching spinner shown in header */ ? (
+            <View style={styles.empty}></View>
           ) : null
         }
       />
@@ -181,9 +242,14 @@ const styles = StyleSheet.create({
   cardInfo: { flex: 1 },
   cardName: { fontSize: 16, fontWeight: '700', color: '#111' },
   cardUsername: { fontSize: 13, color: '#888', marginTop: 2 },
-  addBtn: { backgroundColor: '#eef0ff', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-  addedBtn: { backgroundColor: '#e8f5e9' },
-  addBtnText: { fontSize: 14, fontWeight: '700', color: '#4361EE' },
-  addedBtnText: { color: '#2d6a4f' },
+  btn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, minWidth: 80, alignItems: 'center' },
+  btnAdd: { backgroundColor: '#eef0ff' },
+  btnPending: { backgroundColor: '#f3f4f6' },
+  btnAccept: { backgroundColor: '#e8f5e9' },
+  btnFriends: { backgroundColor: '#e8f5e9' },
+  btnText: { fontSize: 14, fontWeight: '700' },
+  btnTextDefault: { color: '#4361EE' },
+  btnTextAccept: { color: '#2d6a4f' },
+  btnTextFriends: { color: '#2d6a4f' },
   separator: { height: 8 },
 });

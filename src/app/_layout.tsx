@@ -1,6 +1,18 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider } from 'expo-router';
 import { useEffect } from 'react';
 import { Platform, useColorScheme } from 'react-native';
+
+// On web: handle browser popstate (back button / refresh) — always have a fallback route
+if (Platform.OS === 'web' && typeof window !== 'undefined') {
+  window.addEventListener('popstate', () => {
+    // If no Expo Router history, fall back to conversations
+    setTimeout(() => {
+      if (!router.canGoBack()) {
+        router.replace('/conversations');
+      }
+    }, 0);
+  });
+}
 
 // Inject CSS directly into DOM — removes all browser focus rings globally
 if (Platform.OS === 'web' && typeof document !== 'undefined') {
