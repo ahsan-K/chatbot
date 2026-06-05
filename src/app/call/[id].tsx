@@ -10,8 +10,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { doc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '@/hooks/use-auth';
 import { answerCall, endCall, startCall, toggleMute } from '@/services/call-service';
+import { db } from '@/config/firebase';
 import { getUserProfile } from '@/services/user-service';
 import { useCurrentUser } from '@/store/app-store';
 import { getConvId } from '@/services/message-service';
@@ -58,8 +60,19 @@ export default function CallScreen() {
     try {
       callId.current = `${getConvId(firebaseUser.uid, id)}_${Date.now()}`;
       const unsub = await startCall(callId.current, firebaseUser.uid, me.name, me.color, id);
-      unsubRef.current = unsub;
       setCallState('ringing');
+
+      // Listen to call document for status changes (active/ended/rejected)
+      const unsubStatus = onSnapshot(doc(db, 'calls', callId.current), snap => {
+        const data = snap.data();
+        if (data?.status === 'active') setCallState('active');
+        if (data?.status === 'ended' || data?.status === 'rejected') {
+          setCallState('ended');
+          setTimeout(() => router.canGoBack() ? router.back() : router.replace('/conversations'), 800);
+        }
+      });
+
+      unsubRef.current = () => { unsub(); unsubStatus(); };
     } catch (e: any) {
       Alert.alert('Error', 'Call start nahi hua: ' + (e?.message ?? ''));
       router.back();
