@@ -108,12 +108,16 @@ service cloud.firestore {
                     && convId.split('_').hasAny([request.auth.uid]);
     }
 
-    // Voice calls — sirf caller aur receiver access kar sakein
+    // Voice calls
+    // read = all authenticated (needed for onSnapshot list query to detect incoming calls)
+    // write = sirf caller create kar sake, sirf participants update/delete kar sakein
     match /calls/{callId} {
-      allow read, write: if request.auth != null
-                         && (resource == null
-                             || resource.data.callerId == request.auth.uid
-                             || resource.data.receiverId == request.auth.uid);
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.data.callerId == request.auth.uid;
+      allow update, delete: if request.auth != null
+                        && (resource.data.callerId == request.auth.uid
+                            || resource.data.receiverId == request.auth.uid);
     }
 
     match /calls/{callId}/callerCandidates/{candidateId} {
