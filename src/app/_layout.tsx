@@ -1,6 +1,6 @@
 import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, AppState, Image, PermissionsAndroid, Platform, StyleSheet, Text, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { Alert, AppState, Image, Modal, PermissionsAndroid, Platform, StyleSheet, Text, TouchableOpacity, useColorScheme, View } from 'react-native';
 
 // On web: handle browser popstate (back button / refresh) — always have a fallback route
 if (Platform.OS === 'web' && typeof window !== 'undefined') {
@@ -196,13 +196,15 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AnimatedSplashOverlay />
       <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }} />
-      {incomingCall && (
-        <IncomingCallOverlay
-          call={incomingCall}
-          onAccept={handleAcceptCall}
-          onReject={handleRejectCall}
-        />
-      )}
+      <Modal visible={!!incomingCall} transparent animationType="fade" onRequestClose={handleRejectCall}>
+        {incomingCall && (
+          <IncomingCallOverlay
+            call={incomingCall}
+            onAccept={handleAcceptCall}
+            onReject={handleRejectCall}
+          />
+        )}
+      </Modal>
     </ThemeProvider>
   );
 }

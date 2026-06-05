@@ -167,10 +167,13 @@ export function toggleMute(): boolean {
 
 export function listenForIncomingCalls(myUid: string, onCall: (call: CallData) => void): () => void {
   const q = query(collection(db, 'calls'), where('receiverId', '==', myUid));
-  return onSnapshot(q, snap => {
-    snap.docChanges().forEach(change => {
-      const d = change.doc.data() as CallData;
-      if (change.type === 'added' && d.status === 'ringing') onCall({ ...d, id: change.doc.id });
-    });
-  });
+  return onSnapshot(q,
+    snap => {
+      snap.docChanges().forEach(change => {
+        const d = change.doc.data() as CallData;
+        if (change.type === 'added' && d.status === 'ringing') onCall({ ...d, id: change.doc.id });
+      });
+    },
+    err => console.error('[calls] listener error:', err.code, err.message)
+  );
 }
