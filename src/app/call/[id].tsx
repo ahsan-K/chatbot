@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { doc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '@/hooks/use-auth';
-import { answerCall, endCall, startCall, toggleMute } from '@/services/call-service';
+import { answerCall, endCall, startCall, stopLocalStream, toggleMute } from '@/services/call-service';
 import { db } from '@/config/firebase';
 import { getUserProfile } from '@/services/user-service';
 import { useCurrentUser } from '@/store/app-store';
@@ -106,6 +106,10 @@ export default function CallScreen() {
       const unsubStatus = onSnapshot(doc(db, 'calls', incomingCallId), snap => {
         const data = snap.data();
         if (data?.status === 'ended' || data?.status === 'rejected') {
+          stopLocalStream();
+          if (Platform.OS !== 'web') {
+            try { const InCallManager = require('react-native-incall-manager').default; InCallManager.stop(); } catch {}
+          }
           setCallState('ended');
           setTimeout(() => router.canGoBack() ? router.back() : router.replace('/conversations'), 800);
         }
