@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { setCurrentUser } from '@/store/app-store';
 
-const COLORS = ['#4F46E5', '#7B2CBF', '#e63946', '#2d6a4f', '#f4a261', '#3a86ff'];
+const COLORS = ['#0059f7', '#7B2CBF', '#e63946', '#2d6a4f', '#f4a261', '#3a86ff'];
 
 function initials(name: string) {
   return name.trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
@@ -81,7 +81,7 @@ export default function SetupScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#0059f7',
   },
   hero: {
     flex: 1,
@@ -152,12 +152,12 @@ const styles = StyleSheet.create({
   },
 
   btn: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#0059f7',
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 8,
-    shadowColor: '#4F46E5',
+    shadowColor: '#0059f7',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 12,

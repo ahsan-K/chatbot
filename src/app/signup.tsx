@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   webContainer: { flex: 1, flexDirection: 'row' },
   leftPanel: {
     width: '50%',
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#0059f7',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
   rightPanel: { width: '50%', backgroundColor: '#EEF2FF' },
   rightScroll: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
 
-  mobileContainer: { flex: 1, backgroundColor: '#4F46E5' },
+  mobileContainer: { flex: 1, backgroundColor: '#0059f7' },
   mobileHero: {
     height: 180,
     alignItems: 'center',
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     padding: 28,
     width: '100%',
     maxWidth: 420,
-    shadowColor: '#4F46E5',
+    shadowColor: '#0059f7',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.1,
     shadowRadius: 24,
@@ -340,12 +340,12 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 13, color: '#e63946', fontWeight: '600', textAlign: 'center' },
 
   btn: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#0059f7',
     borderRadius: 14,
     paddingVertical: 15,
     alignItems: 'center',
     marginTop: 4,
-    shadowColor: '#4F46E5',
+    shadowColor: '#0059f7',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
@@ -356,5 +356,5 @@ const styles = StyleSheet.create({
 
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   switchText: { fontSize: 14, color: '#666' },
-  switchLink: { fontSize: 14, color: '#4F46E5', fontWeight: '700' },
+  switchLink: { fontSize: 14, color: '#0059f7', fontWeight: '700' },
 });

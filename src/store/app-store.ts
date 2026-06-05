@@ -9,7 +9,7 @@ export interface AppUser {
   photoURL?: string;
 }
 
-const AVATAR_COLORS = ['#4F46E5', '#7B2CBF', '#e63946', '#2d6a4f', '#f4a261', '#3a86ff'];
+const AVATAR_COLORS = ['#0059f7', '#7B2CBF', '#e63946', '#2d6a4f', '#f4a261', '#3a86ff'];
 
 function colorFromUid(uid: string): string {
   const hash = uid.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);

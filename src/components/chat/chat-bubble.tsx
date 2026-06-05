@@ -44,7 +44,7 @@ function AudioPlayer({ uri, isBot }: { uri: string; isBot: boolean }) {
   const duration = status.duration ?? 0;
   const position = status.currentTime ?? 0;
   const progress = duration > 0 ? position / duration : 0;
-  const accentColor = isBot ? BRAND_PURPLE : '#4F46E5';
+  const accentColor = isBot ? BRAND_PURPLE : '#0059f7';
   const trackBg = isBot ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)';
 
   function togglePlay() {
@@ -134,7 +134,7 @@ function MediaContent({ media, isBot, onPress }: { media: ChatMedia; isBot: bool
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}
       style={[styles.mediaCard, isBot ? styles.mediaCardBot : styles.mediaCardUser]}>
-      <View style={[styles.docCircle, { backgroundColor: isBot ? BRAND_PURPLE : '#4F46E5' }]}>
+      <View style={[styles.docCircle, { backgroundColor: isBot ? BRAND_PURPLE : '#0059f7' }]}>
         <Text style={styles.playIcon}>📄</Text>
       </View>
       <View style={styles.mediaInfo}>
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
   // Shared
   timestamp: { fontSize: 10, color: '#888888' },
   receipt: { fontSize: 10, color: '#888888', fontWeight: '600' },
-  receiptRead: { color: '#4F46E5' },
+  receiptRead: { color: '#0059f7' },
 
   // Media
   imageOverlay: {
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
   mediaCardUser: { backgroundColor: 'rgba(0,0,0,0.06)' },
   playCircle: {
     width: 44, height: 44, borderRadius: 22,
-    backgroundColor: '#4F46E5', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    backgroundColor: '#0059f7', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
   audioCircle: {
     width: 44, height: 44, borderRadius: 22,

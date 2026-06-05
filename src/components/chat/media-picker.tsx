@@ -11,7 +11,7 @@ type Props = {
 };
 
 const OPTIONS: Array<{ type: 'image' | 'video' | 'audio' | 'document' | 'selfie' | 'record'; emoji: string; label: string; color: string }> = [
-  { type: 'image', emoji: '🖼️', label: 'Image', color: '#4F46E5' },
+  { type: 'image', emoji: '🖼️', label: 'Image', color: '#0059f7' },
   { type: 'video', emoji: '🎬', label: 'Video', color: '#7B2CBF' },
   { type: 'audio', emoji: '🎵', label: 'Audio', color: '#3C096C' },
   { type: 'document', emoji: '📄', label: 'Document', color: '#2d6a4f' },

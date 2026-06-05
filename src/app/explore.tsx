@@ -74,7 +74,7 @@ function UserCard({ user, status, onAction, loading }: {
         disabled={status === 'friends' || loading}
         activeOpacity={0.7}>
         {loading
-          ? <ActivityIndicator size="small" color="#4F46E5" />
+          ? <ActivityIndicator size="small" color="#0059f7" />
           : <Text style={[styles.btnText, btnTextStyle]}>{btnLabel}</Text>}
       </TouchableOpacity>
     </View>
@@ -148,7 +148,7 @@ export default function ExploreScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={{ backgroundColor: '#4F46E5' }}>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: '#0059f7' }}>
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => router.canGoBack() ? router.back() : router.replace('/conversations')}
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   btnAccept: { backgroundColor: '#e8f5e9' },
   btnFriends: { backgroundColor: '#e8f5e9' },
   btnText: { fontSize: 14, fontWeight: '700' },
-  btnTextDefault: { color: '#4F46E5' },
+  btnTextDefault: { color: '#0059f7' },
   btnTextAccept: { color: '#2d6a4f' },
   btnTextFriends: { color: '#2d6a4f' },
   separator: { height: 8 },

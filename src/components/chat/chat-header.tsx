@@ -34,7 +34,7 @@ export function ChatHeader({ title = 'AI Assistant', onMinimize }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#0059f7',
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
     paddingHorizontal: 24,

@@ -190,12 +190,12 @@ const styles = StyleSheet.create({
   },
   attachBtn: {
     width: 34, height: 34, borderRadius: 17,
-    backgroundColor: '#4F46E5', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    backgroundColor: '#0059f7', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
   attachIcon: { color: '#FFFFFF', fontSize: 20, lineHeight: 22, fontWeight: '300', marginTop: -1 },
   input: { flex: 1, fontSize: 16, color: '#444444', padding: 0, margin: 0, outlineWidth: 0 } as any,
   sendBtn: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
-  sendIcon: { fontSize: 18, color: '#4F46E5' },
+  sendIcon: { fontSize: 18, color: '#0059f7' },
 
   recordingRow: {
     flexDirection: 'row', alignItems: 'center',
@@ -208,6 +208,6 @@ const styles = StyleSheet.create({
   recordingInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
   recDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#e63946' },
   recText: { fontSize: 15, color: '#e63946', fontWeight: '600' },
-  sendRecBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#4F46E5', alignItems: 'center', justifyContent: 'center' },
+  sendRecBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#0059f7', alignItems: 'center', justifyContent: 'center' },
   sendRecIcon: { fontSize: 16, color: '#FFFFFF' },
 });

@@ -213,7 +213,7 @@ export default function HumanChatScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#f8f9fa' },
   header: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#0059f7',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,

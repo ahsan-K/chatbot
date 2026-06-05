@@ -31,7 +31,7 @@ export default function ProfileScreen() {
   const me = useCurrentUser();
 
   const [name, setName] = useState(me?.name ?? '');
-  const [color] = useState(me?.color ?? '#4F46E5');
+  const [color] = useState(me?.color ?? '#0059f7');
   const [photoURL, setPhotoURL] = useState<string | undefined>(me?.photoURL);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -272,7 +272,7 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#4F46E5' },
+  container: { flex: 1, backgroundColor: '#0059f7' },
 
   hero: {
     alignItems: 'center', justifyContent: 'center',
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff', borderRadius: 24, padding: 28,
     width: '100%', maxWidth: 480,
-    shadowColor: '#4F46E5', shadowOffset: { width: 0, height: 8 },
+    shadowColor: '#0059f7', shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.1, shadowRadius: 24, elevation: 8, gap: 12,
   },
   cardTitle: { fontSize: 22, fontWeight: '800', color: '#111', letterSpacing: -0.5 },
@@ -336,9 +336,9 @@ const styles = StyleSheet.create({
   },
 
   btn: {
-    backgroundColor: '#4F46E5', borderRadius: 14, paddingVertical: 15,
+    backgroundColor: '#0059f7', borderRadius: 14, paddingVertical: 15,
     alignItems: 'center', marginTop: 4,
-    shadowColor: '#4F46E5', shadowOffset: { width: 0, height: 6 },
+    shadowColor: '#0059f7', shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3, shadowRadius: 12, elevation: 6,
   },
   btnOff: { backgroundColor: '#c0c7d0', shadowOpacity: 0 },
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingVertical: 4,
   },
-  changePassText: { fontSize: 14, fontWeight: '600', color: '#4F46E5' },
+  changePassText: { fontSize: 14, fontWeight: '600', color: '#0059f7' },
   chevron: { fontSize: 11, color: '#aaa' },
   passSection: { gap: 10 },
 });
