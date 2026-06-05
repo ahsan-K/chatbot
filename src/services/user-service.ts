@@ -25,7 +25,7 @@ export interface UserProfile {
   online?: boolean;
 }
 
-const AVATAR_COLORS = ['#4361EE', '#7B2CBF', '#e63946', '#2d6a4f', '#f4a261', '#3a86ff'];
+const AVATAR_COLORS = ['#4F46E5', '#7B2CBF', '#e63946', '#2d6a4f', '#f4a261', '#3a86ff'];
 
 export function colorFromUid(uid: string): string {
   const hash = uid.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);

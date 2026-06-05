@@ -31,7 +31,7 @@ export default function CallScreen() {
   const [callState, setCallState] = useState<CallState>('connecting');
   const [isMuted, setIsMuted] = useState(false);
   const [otherName, setOtherName] = useState('');
-  const [otherColor, setOtherColor] = useState('#4361EE');
+  const [otherColor, setOtherColor] = useState('#4F46E5');
   const [duration, setDuration] = useState(0);
   const callId = useRef<string>(incomingCallId ?? '');
   const unsubRef = useRef<(() => void) | null>(null);

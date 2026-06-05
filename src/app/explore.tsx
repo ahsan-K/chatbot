@@ -74,7 +74,7 @@ function UserCard({ user, status, onAction, loading }: {
         disabled={status === 'friends' || loading}
         activeOpacity={0.7}>
         {loading
-          ? <ActivityIndicator size="small" color="#4361EE" />
+          ? <ActivityIndicator size="small" color="#4F46E5" />
           : <Text style={[styles.btnText, btnTextStyle]}>{btnLabel}</Text>}
       </TouchableOpacity>
     </View>
@@ -148,7 +148,7 @@ export default function ExploreScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={{ backgroundColor: '#4361EE' }}>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: '#4F46E5' }}>
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => router.canGoBack() ? router.back() : router.replace('/conversations')}
@@ -241,12 +241,12 @@ const styles = StyleSheet.create({
   cardName: { fontSize: 16, fontWeight: '700', color: '#111' },
   cardUsername: { fontSize: 13, color: '#888', marginTop: 2 },
   btn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, minWidth: 80, alignItems: 'center' },
-  btnAdd: { backgroundColor: '#eef0ff' },
+  btnAdd: { backgroundColor: '#EEF2FF' },
   btnPending: { backgroundColor: '#f3f4f6' },
   btnAccept: { backgroundColor: '#e8f5e9' },
   btnFriends: { backgroundColor: '#e8f5e9' },
   btnText: { fontSize: 14, fontWeight: '700' },
-  btnTextDefault: { color: '#4361EE' },
+  btnTextDefault: { color: '#4F46E5' },
   btnTextAccept: { color: '#2d6a4f' },
   btnTextFriends: { color: '#2d6a4f' },
   separator: { height: 8 },

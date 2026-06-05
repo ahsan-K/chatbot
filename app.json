@@ -21,7 +21,7 @@
     "android": {
       "package": "com.chatapp.app",
       "adaptiveIcon": {
-        "backgroundColor": "#4361EE",
+        "backgroundColor": "#4F46E5",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -47,7 +47,7 @@
     },
     "notification": {
       "icon": "./assets/images/icon.png",
-      "color": "#4361EE",
+      "color": "#4F46E5",
       "androidMode": "default"
     },
     "plugins": [
@@ -56,7 +56,7 @@
         "expo-notifications",
         {
           "icon": "./assets/images/icon.png",
-          "color": "#4361EE",
+          "color": "#4F46E5",
           "defaultChannel": "messages",
           "sounds": []
         }
@@ -64,7 +64,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#4361EE",
+          "backgroundColor": "#4F46E5",
           "android": {
             "image": "./assets/images/splash-icon.png",
             "imageWidth": 76

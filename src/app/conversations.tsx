@@ -116,7 +116,7 @@ export default function ConversationsScreen() {
             {user?.photoURL ? (
               <Image source={{ uri: user.photoURL }} style={styles.myAvatarImg} />
             ) : (
-              <View style={[styles.myAvatar, { backgroundColor: user?.color ?? '#4361EE' }]}>
+              <View style={[styles.myAvatar, { backgroundColor: user?.color ?? '#4F46E5' }]}>
                 <Text style={styles.myAvatarText}>{myIni}</Text>
               </View>
             )}
@@ -168,7 +168,7 @@ export default function ConversationsScreen() {
 
       {loading && (
         <View style={styles.loadingWrap}>
-          <ActivityIndicator color="#4361EE" size="large" />
+          <ActivityIndicator color="#4F46E5" size="large" />
         </View>
       )}
 
@@ -263,12 +263,12 @@ const styles = StyleSheet.create({
   itemTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   itemName: { fontSize: 16, fontWeight: '700', color: '#111', flex: 1 },
   itemTime: { fontSize: 12, color: '#aaa', flexShrink: 0 },
-  itemTimeUnread: { color: '#4361EE', fontWeight: '600' },
+  itemTimeUnread: { color: '#4F46E5', fontWeight: '600' },
   itemBottom: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   itemPreview: { flex: 1, fontSize: 14, color: '#888' },
   itemPreviewUnread: { color: '#333', fontWeight: '600' },
   badge: {
-    backgroundColor: '#4361EE', borderRadius: 10,
+    backgroundColor: '#4F46E5', borderRadius: 10,
     minWidth: 20, height: 20,
     alignItems: 'center', justifyContent: 'center',
     paddingHorizontal: 6,
@@ -294,13 +294,13 @@ const styles = StyleSheet.create({
   emptyEmoji: { fontSize: 48 },
   emptyText: { fontSize: 16, color: '#aaa' },
   findBtn: {
-    backgroundColor: '#4361EE', borderRadius: 14,
+    backgroundColor: '#4F46E5', borderRadius: 14,
     paddingHorizontal: 24, paddingVertical: 12, marginTop: 8,
   },
   findBtnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
   exploreBtn: {
     width: 38, height: 38, borderRadius: 19,
-    backgroundColor: '#eef0ff',
+    backgroundColor: '#EEF2FF',
     alignItems: 'center', justifyContent: 'center',
     position: 'relative',
   },

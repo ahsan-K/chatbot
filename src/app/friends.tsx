@@ -41,7 +41,7 @@ function RequestCard({ req, onAccept, onReject, loading }: {
         <Text style={styles.cardUsername}>@{req.fromUsername}</Text>
       </View>
       {loading ? (
-        <ActivityIndicator color="#4361EE" size="small" />
+        <ActivityIndicator color="#4F46E5" size="small" />
       ) : (
         <View style={styles.reqActions}>
           <TouchableOpacity style={styles.acceptBtn} onPress={onAccept} activeOpacity={0.7}>
@@ -113,7 +113,7 @@ export default function FriendsScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={{ backgroundColor: '#4361EE' }}>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: '#4F46E5' }}>
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => router.canGoBack() ? router.back() : router.replace('/conversations')}
@@ -222,8 +222,8 @@ const styles = StyleSheet.create({
   },
   rejectBtnText: { fontSize: 14, color: '#e63946', fontWeight: '700' },
 
-  msgBtn: { backgroundColor: '#eef0ff', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20 },
-  msgBtnText: { fontSize: 13, fontWeight: '700', color: '#4361EE' },
+  msgBtn: { backgroundColor: '#EEF2FF', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20 },
+  msgBtnText: { fontSize: 13, fontWeight: '700', color: '#4F46E5' },
 
   separator: { height: StyleSheet.hairlineWidth, backgroundColor: '#f0f0f0', marginLeft: 76 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingBottom: 60 },
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 18, fontWeight: '800', color: '#222' },
   emptyHint: { fontSize: 14, color: '#aaa' },
   findBtn: {
-    backgroundColor: '#4361EE', borderRadius: 14,
+    backgroundColor: '#4F46E5', borderRadius: 14,
     paddingHorizontal: 24, paddingVertical: 12, marginTop: 8,
   },
   findBtnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },

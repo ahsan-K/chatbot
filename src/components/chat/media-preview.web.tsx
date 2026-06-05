@@ -46,7 +46,7 @@ const HtmlAnchor = ({ href, name }: { href: string; name?: string }) =>
       'div',
       {
         style: {
-          backgroundColor: '#4361EE',
+          backgroundColor: '#4F46E5',
           color: '#fff',
           fontWeight: '700',
           fontSize: 15,
