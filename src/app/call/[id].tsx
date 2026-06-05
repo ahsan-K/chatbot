@@ -34,6 +34,7 @@ export default function CallScreen() {
 
   const [callState, setCallState] = useState<CallState>('connecting');
   const [isMuted, setIsMuted] = useState(false);
+  const [isSpeaker, setIsSpeaker] = useState(false);
   const [otherName, setOtherName] = useState('');
   const [otherColor, setOtherColor] = useState('#0059f7');
   const [otherPhoto, setOtherPhoto] = useState<string | undefined>();
@@ -46,6 +47,12 @@ export default function CallScreen() {
   useEffect(() => {
     if (!firebaseUser || !me || startedRef.current) return;
     startedRef.current = true;
+    if (Platform.OS !== 'web') {
+      try {
+        const InCallManager = require('react-native-incall-manager').default;
+        InCallManager.start({ media: 'audio' });
+      } catch {}
+    }
     getUserProfile(id).then(p => {
       if (p) { setOtherName(p.name); setOtherColor(p.color); setOtherPhoto(p.photoURL); }
     });
@@ -126,6 +133,9 @@ export default function CallScreen() {
   }
 
   async function handleHangUp() {
+    if (Platform.OS !== 'web') {
+      try { const InCallManager = require('react-native-incall-manager').default; InCallManager.stop(); } catch {}
+    }
     if (callId.current) await endCall(callId.current);
     setCallState('ended');
     setTimeout(() => router.canGoBack() ? router.back() : router.replace('/conversations'), 800);
@@ -134,6 +144,16 @@ export default function CallScreen() {
   function handleMute() {
     const muted = toggleMute();
     setIsMuted(muted);
+  }
+
+  function handleSpeaker() {
+    if (Platform.OS === 'web') return;
+    try {
+      const InCallManager = require('react-native-incall-manager').default;
+      const next = !isSpeaker;
+      InCallManager.setSpeakerphoneOn(next);
+      setIsSpeaker(next);
+    } catch {}
   }
 
   const statusText =
@@ -182,13 +202,18 @@ export default function CallScreen() {
             <Text style={styles.controlLabel}>End</Text>
           </View>
 
-          {/* Speaker */}
-          <View style={styles.controlItem}>
-            <TouchableOpacity style={styles.controlBtn} activeOpacity={0.7}>
-              <Text style={styles.controlIcon}>🔊</Text>
-            </TouchableOpacity>
-            <Text style={styles.controlLabel}>Speaker</Text>
-          </View>
+          {/* Speaker - native only */}
+          {Platform.OS !== 'web' && (
+            <View style={styles.controlItem}>
+              <TouchableOpacity
+                style={[styles.controlBtn, isSpeaker && styles.controlBtnActive]}
+                onPress={handleSpeaker}
+                activeOpacity={0.7}>
+                <Text style={styles.controlIcon}>🔊</Text>
+              </TouchableOpacity>
+              <Text style={styles.controlLabel}>Speaker</Text>
+            </View>
+          )}
         </View>
       </View>
     </SafeAreaView>
