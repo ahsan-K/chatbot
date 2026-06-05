@@ -18,6 +18,16 @@ const STUN = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    {
+      urls: [
+        'turn:openrelay.metered.ca:80',
+        'turn:openrelay.metered.ca:443',
+        'turn:openrelay.metered.ca:443?transport=tcp',
+      ],
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
   ],
 };
 
@@ -65,6 +75,16 @@ export async function startCall(
   (_pc as any).onicecandidate = async (e: any) => {
     if (e.candidate) {
       await addDoc(collection(db, 'calls', callId, 'callerCandidates'), e.candidate.toJSON());
+    }
+  };
+
+  (_pc as any).onconnectionstatechange = async () => {
+    const state = (_pc as any).connectionState;
+    if (state === 'connected') {
+      await updateDoc(doc(db, 'calls', callId), { status: 'active' }).catch(() => {});
+    }
+    if (state === 'disconnected' || state === 'failed' || state === 'closed') {
+      await updateDoc(doc(db, 'calls', callId), { status: 'ended' }).catch(() => {});
     }
   };
 
