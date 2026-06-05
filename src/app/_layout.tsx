@@ -6,6 +6,7 @@ import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { useAuth } from '@/hooks/use-auth';
 import { getUserProfile } from '@/services/user-service';
 import { syncFromFirebaseUser, setCurrentUser } from '@/store/app-store';
+import { startContactsListener, stopContactsListener } from '@/store/conversations-store';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -24,6 +25,10 @@ export default function RootLayout() {
           });
         }
       });
+      const unsub = startContactsListener(user.uid);
+      return unsub;
+    } else {
+      stopContactsListener();
     }
   }, [user]);
 

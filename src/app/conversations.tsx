@@ -17,7 +17,6 @@ import { useCurrentUser } from '@/store/app-store';
 import {
   Conversation,
   markRead,
-  startContactsListener,
   useConversations,
 } from '@/store/conversations-store';
 
@@ -89,11 +88,7 @@ export default function ConversationsScreen() {
 
   useEffect(() => {
     if (firebaseUser === null) { router.replace('/login'); return; }
-    if (firebaseUser) {
-      const unsub = startContactsListener(firebaseUser.uid);
-      setLoading(false);
-      return unsub;
-    }
+    if (firebaseUser) setLoading(false);
   }, [firebaseUser]);
 
   const filtered = conversations.filter(c =>

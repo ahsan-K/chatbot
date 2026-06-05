@@ -18,7 +18,7 @@ import { ChatMedia, ChatMessage } from '@/components/chat/types';
 import { useAuth } from '@/hooks/use-auth';
 import { getConvId, listenToMessages, sendMediaMessage, sendMessage } from '@/services/message-service';
 import { uploadMedia } from '@/services/storage-service';
-import { getUserProfile } from '@/services/user-service';
+import { getUserProfile, UserProfile } from '@/services/user-service';
 import { useCurrentUser } from '@/store/app-store';
 import { getConversation, markRead } from '@/store/conversations-store';
 
@@ -31,9 +31,16 @@ export default function HumanChatScreen() {
   const me = useCurrentUser();
   const { user: firebaseUser } = useAuth();
   const conv = getConversation(id);
+  const [otherUser, setOtherUser] = useState<UserProfile | null>(conv?.user ?? null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [previewMedia, setPreviewMedia] = useState<ChatMedia | null>(null);
   const listRef = useRef<FlatList>(null);
+
+  // Fallback: fetch user profile directly if conv not in store (e.g. on refresh)
+  useEffect(() => {
+    if (conv) { setOtherUser(conv.user); return; }
+    if (id) getUserProfile(id).then(p => { if (p) setOtherUser(p); });
+  }, [conv, id]);
 
   // Real-time messages listener
   useEffect(() => {
@@ -46,9 +53,9 @@ export default function HumanChatScreen() {
     return unsub;
   }, [firebaseUser, id]);
 
-  if (!conv || !me || !firebaseUser) return null;
+  if (!otherUser || !me || !firebaseUser) return null;
 
-  const other = conv.user;
+  const other = otherUser;
 
   async function handleSend(text: string) {
     if (!firebaseUser || !me) return;
@@ -90,7 +97,7 @@ export default function HumanChatScreen() {
       <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
+          <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/conversations')} style={styles.backBtn} hitSlop={8}>
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
           <View style={[styles.headerAvatar, { backgroundColor: other.color }]}>
