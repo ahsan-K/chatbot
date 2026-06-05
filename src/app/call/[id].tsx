@@ -40,13 +40,11 @@ export default function CallScreen() {
   const callId = useRef<string>(incomingCallId ?? '');
   const unsubRef = useRef<(() => void) | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startedRef = useRef(false);
 
   useEffect(() => {
-    console.log('[CallScreen] useEffect RUNNING, id:', id, 'isIncoming:', isIncoming, 'user:', !!firebaseUser, 'me:', !!me);
-    if (!firebaseUser || !me) {
-      console.log('[CallScreen] EARLY RETURN - no user');
-      return;
-    }
+    if (!firebaseUser || !me || startedRef.current) return;
+    startedRef.current = true;
     getUserProfile(id).then(p => {
       if (p) { setOtherName(p.name); setOtherColor(p.color); setOtherPhoto(p.photoURL); }
     });
@@ -59,7 +57,7 @@ export default function CallScreen() {
       unsubRef.current?.();
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, []);
+  }, [firebaseUser, me]);
 
   async function initiateCall() {
     console.log('[initiateCall] firebaseUser:', !!firebaseUser, 'me:', !!me, 'id:', id);
