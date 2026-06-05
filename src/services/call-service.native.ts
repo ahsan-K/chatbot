@@ -93,16 +93,6 @@ export async function startCall(
     }
   };
 
-  (_pc as any).onconnectionstatechange = async () => {
-    const state = (_pc as any).connectionState;
-    if (state === 'connected') {
-      await updateDoc(doc(db, 'calls', callId), { status: 'active' }).catch(() => {});
-    }
-    if (state === 'disconnected' || state === 'failed' || state === 'closed') {
-      await updateDoc(doc(db, 'calls', callId), { status: 'ended' }).catch(() => {});
-    }
-  };
-
   const offer = await _pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: false } as any);
   await _pc.setLocalDescription(new RTCSessionDescription(offer));
 
