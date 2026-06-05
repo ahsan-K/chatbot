@@ -12,6 +12,7 @@ import {
 
 import { db } from '@/config/firebase';
 import { ChatMedia, ChatMessage } from '@/components/chat/types';
+import { sendPushNotification } from '@/services/notification-service';
 
 export function getConvId(uid1: string, uid2: string): string {
   return [uid1, uid2].sort().join('_');
@@ -39,6 +40,7 @@ export async function sendMessage(
   });
 
   await _updateContacts(myUid, myProfile, otherUid, otherProfile, text);
+  sendPushNotification(otherUid, myProfile.name, text);
 }
 
 // Send a media message (URL already uploaded to Storage)
@@ -63,6 +65,7 @@ export async function sendMediaMessage(
 
   const preview = `📎 ${media.type}`;
   await _updateContacts(myUid, myProfile, otherUid, otherProfile, preview);
+  sendPushNotification(otherUid, myProfile.name, preview);
 }
 
 async function _updateContacts(

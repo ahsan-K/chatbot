@@ -45,8 +45,22 @@
       "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
+    "notification": {
+      "icon": "./assets/images/icon.png",
+      "color": "#4361EE",
+      "androidMode": "default"
+    },
     "plugins": [
       "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#4361EE",
+          "defaultChannel": "messages",
+          "sounds": []
+        }
+      ],
       [
         "expo-splash-screen",
         {

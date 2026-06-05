@@ -36,8 +36,10 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
   document.head.appendChild(style);
 }
 
+import * as Notifications from 'expo-notifications';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { useAuth } from '@/hooks/use-auth';
+import { listenForIncomingMessages, registerForPushNotifications, showLocalNotification } from '@/services/notification-service';
 import { getUserProfile } from '@/services/user-service';
 import { syncFromFirebaseUser, setCurrentUser } from '@/store/app-store';
 import { startContactsListener, stopContactsListener } from '@/store/conversations-store';
@@ -45,6 +47,15 @@ import { startContactsListener, stopContactsListener } from '@/store/conversatio
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const { user } = useAuth();
+
+  // Navigate to chat when user taps a notification
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener(response => {
+      const senderUid = response.notification.request.content.data?.senderUid;
+      if (senderUid) router.push(`/chat/${senderUid}` as any);
+    });
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     syncFromFirebaseUser(user ?? null);
@@ -59,8 +70,12 @@ export default function RootLayout() {
           });
         }
       });
-      const unsub = startContactsListener(user.uid);
-      return unsub;
+      registerForPushNotifications(user.uid);
+      const unsubContacts = startContactsListener(user.uid);
+      const unsubNotif = listenForIncomingMessages(user.uid, (name, msg, senderUid) => {
+        showLocalNotification(name, msg, senderUid);
+      });
+      return () => { unsubContacts(); unsubNotif(); };
     } else {
       stopContactsListener();
     }
