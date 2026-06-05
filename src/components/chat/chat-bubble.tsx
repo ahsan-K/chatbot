@@ -1,3 +1,4 @@
+import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { ChatMedia, ChatMessage } from './types';
@@ -29,6 +30,61 @@ function formatSize(bytes?: number) {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+
+function formatDuration(secs: number) {
+  const m = Math.floor(secs / 60).toString().padStart(2, '0');
+  const s = Math.floor(secs % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+function AudioPlayer({ uri, isBot }: { uri: string; isBot: boolean }) {
+  const player = useAudioPlayer(uri);
+  const status = useAudioPlayerStatus(player);
+  const isPlaying = status.playing;
+  const duration = status.duration ?? 0;
+  const position = status.currentTime ?? 0;
+  const progress = duration > 0 ? position / duration : 0;
+  const accentColor = isBot ? BRAND_PURPLE : '#4361EE';
+  const trackBg = isBot ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)';
+
+  function togglePlay() {
+    if (isPlaying) {
+      player.pause();
+    } else {
+      if (status.currentTime >= status.duration - 0.1) player.seekTo(0);
+      player.play();
+    }
+  }
+
+  return (
+    <View style={audioStyles.container}>
+      <TouchableOpacity onPress={togglePlay} style={[audioStyles.playBtn, { backgroundColor: accentColor }]} activeOpacity={0.8}>
+        <Text style={audioStyles.playIcon}>{isPlaying ? '⏸' : '▶'}</Text>
+      </TouchableOpacity>
+      <View style={audioStyles.trackWrap}>
+        <View style={[audioStyles.track, { backgroundColor: trackBg }]}>
+          <View style={[audioStyles.trackFill, { backgroundColor: accentColor, width: `${progress * 100}%` as any }]} />
+        </View>
+        <Text style={[audioStyles.time, { color: isBot ? 'rgba(255,255,255,0.7)' : '#888' }]}>
+          {isPlaying ? formatDuration(position) : formatDuration(duration)}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const audioStyles = StyleSheet.create({
+  container: { flexDirection: 'row', alignItems: 'center', gap: 10, minWidth: 180 },
+  playBtn: {
+    width: 38, height: 38, borderRadius: 19,
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  playIcon: { fontSize: 15, color: '#FFFFFF' },
+  trackWrap: { flex: 1, gap: 4 },
+  track: { height: 3, borderRadius: 2, overflow: 'hidden' },
+  trackFill: { height: 3, borderRadius: 2 },
+  time: { fontSize: 10, fontWeight: '600' },
+});
 
 function AvatarCircle({ color, initials, size = 40 }: { color: string; initials: string; size?: number }) {
   return (
@@ -72,25 +128,7 @@ function MediaContent({ media, isBot, onPress }: { media: ChatMedia; isBot: bool
   }
 
   if (media.type === 'audio') {
-    return (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.8}
-        style={[styles.mediaCard, isBot ? styles.mediaCardBot : styles.mediaCardUser]}>
-        <View style={[styles.audioCircle, { backgroundColor: isBot ? BRAND_PURPLE : '#4361EE' }]}>
-          <Text style={styles.playIcon}>🎵</Text>
-        </View>
-        <View style={styles.mediaInfo}>
-          <Text style={[styles.mediaName, { color: textColor }]} numberOfLines={1}>
-            {media.name ?? 'audio.mp3'}
-          </Text>
-          <View style={styles.audioBar}>
-            <View style={[styles.audioProgress, { backgroundColor: isBot ? BRAND_PURPLE : '#4361EE' }]} />
-          </View>
-          <Text style={[styles.mediaSize, { color: isBot ? 'rgba(255,255,255,0.6)' : '#888' }]}>
-            Tap to play · {formatSize(media.size)}
-          </Text>
-        </View>
-      </TouchableOpacity>
-    );
+    return <AudioPlayer uri={media.uri} isBot={isBot} />;
   }
 
   return (
