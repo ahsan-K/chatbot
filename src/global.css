@@ -1,3 +1,27 @@
+*,
+*:focus,
+*:focus-visible,
+*:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+input,
+input:focus,
+input:focus-visible,
+textarea,
+textarea:focus,
+[contenteditable],
+[contenteditable]:focus,
+[role="textbox"],
+[role="textbox"]:focus,
+div:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-appearance: none !important;
+}
+
 :root {
   --font-display:
     Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,
