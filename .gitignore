@@ -37,6 +37,11 @@ yarn-error.*
 # Claude Code
 .claude/
 
+# Build artifacts
+*.apk
+*.aab
+*.ipa
+
 # typescript
 *.tsbuildinfo
 
