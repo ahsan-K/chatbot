@@ -37,9 +37,9 @@ yarn-error.*
 # Claude Code
 .claude/
 
-# Firebase
-google-services.json
-GoogleService-Info.plist
+# Firebase sensitive files (keep if repo is public)
+# google-services.json
+# GoogleService-Info.plist
 
 # Build artifacts
 *.apk

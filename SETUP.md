@@ -2,7 +2,7 @@
 
 ## Environment Variables
 
-`.env` file project root mein banao aur yeh values fill karo:
+Create a `.env` file in the project root and fill in the values:
 
 ```env
 # Firebase
@@ -41,15 +41,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // User profiles
-    // get  = single document read (getUserProfile)
-    // list = collection query (getAllUsers / search in Explore)
     match /users/{uid} {
       allow get, list: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == uid;
     }
 
-    // Usernames — uniqueness check ke liye
     match /usernames/{username} {
       allow read: if true;
       allow create: if request.auth != null
@@ -58,23 +54,16 @@ service cloud.firestore {
                     && resource.data.uid == request.auth.uid;
     }
 
-    // Contacts — sirf apne contacts par full access
     match /contacts/{userId}/{document=**} {
       allow read, write: if request.auth != null
                          && request.auth.uid == userId;
     }
 
-    // Sender apna entry receiver ke contacts mein update/create kar sake
-    // (last message preview + unread count ke liye)
     match /contacts/{receiverId}/list/{senderId} {
       allow update, create: if request.auth != null
                     && (request.auth.uid == senderId || request.auth.uid == receiverId);
     }
 
-    // Friend Requests
-    // get  = single doc read (non-existent bhi) — requestId se check karo
-    //        resource null ho sakta hai (doc exist nahi karta), isliye requestId use karo
-    // list = collection query (onSnapshot) — sirf existing docs, resource.data safe hai
     match /friendRequests/{requestId} {
       allow get: if request.auth != null
                  && (requestId.split('_')[0] == request.auth.uid
@@ -89,28 +78,22 @@ service cloud.firestore {
                         || resource.data.to == request.auth.uid);
     }
 
-    // Typing indicators — sirf conversation participants dekh sakein
     match /typing/{convId}/users/{uid} {
       allow read: if request.auth != null
                   && convId.split('_').hasAny([request.auth.uid]);
       allow write: if request.auth != null && request.auth.uid == uid;
     }
 
-    // Messages — sirf conversation participants padh/likh sakein
     match /messages/{convId}/msgs/{msgId} {
       allow read: if request.auth != null
                   && convId.split('_').hasAny([request.auth.uid]);
       allow create: if request.auth != null
                     && convId.split('_').hasAny([request.auth.uid])
                     && request.resource.data.senderId == request.auth.uid;
-      // update = read receipts (readAt field)
       allow update: if request.auth != null
                     && convId.split('_').hasAny([request.auth.uid]);
     }
 
-    // Voice calls
-    // read = all authenticated (needed for onSnapshot list query to detect incoming calls)
-    // write = sirf caller create kar sake, sirf participants update/delete kar sakein
     match /calls/{callId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
@@ -132,16 +115,37 @@ service cloud.firestore {
 ```
 
 #### Firestore Indexes
-Koi custom index nahi chahiye — sab queries automatically kaam karti hain.
+No custom indexes needed — all queries work automatically.
 
 ---
 
-### 3. Firebase Storage
-Firebase Storage requires **Blaze (pay-as-you-go) plan**.
+### 3. Push Notifications (FCM) Setup
 
-**Agar Cloudinary use kar rahe ho** (free alternative) → Storage skip karo.
+Push notifications (call alerts + messages) require native Firebase configuration files.
 
-**Agar Storage enable kiya hai:**
+#### Android — google-services.json
+1. Firebase Console → **Project Settings** (gear icon)
+2. Scroll to **"Your apps"** → **Add app** → Android
+3. Package name: `com.chatapp.app`
+4. **Download `google-services.json`**
+5. Place the file in the project root: `chatbot/google-services.json`
+
+#### iOS — GoogleService-Info.plist
+1. Firebase Console → **Project Settings** → **Your apps** → **Add app** → iOS
+2. Bundle ID: `com.chatapp.app`
+3. **Download `GoogleService-Info.plist`**
+4. Place the file in the project root: `chatbot/GoogleService-Info.plist`
+
+> **Note:** These files contain Firebase credentials. Keep the repository private or add them to `.gitignore` for public repos.
+
+---
+
+### 4. Firebase Storage
+Firebase Storage requires the **Blaze (pay-as-you-go) plan**.
+
+**If using Cloudinary** (free alternative) → skip Storage.
+
+**If enabling Storage:**
 Firebase Console → **Build → Storage → Get started → Production mode**
 
 #### Storage Rules
@@ -164,22 +168,22 @@ service firebase.storage {
 
 ## Cloudinary Setup (Free Media Hosting)
 
-Firebase Storage ki jagah Cloudinary use kar sakte hain (free tier).
+Use Cloudinary instead of Firebase Storage (free tier available).
 
-### 1. Account banao
+### 1. Create an account
 > [cloudinary.com](https://cloudinary.com) → Sign up free
 
-### 2. Cloud name note karo
-> Dashboard → top-left mein cloud name dikh raha hoga (e.g. `dqypvawr6`)
+### 2. Note your cloud name
+> Dashboard → cloud name shown in the top-left (e.g. `dqypvawr6`)
 
-### 3. Unsigned Upload Preset banao
+### 3. Create an Unsigned Upload Preset
 > Settings → Upload → Upload presets → **Add upload preset**
-> - **Preset name:** `chatapp_media` (ya koi bhi naam)
-> - **Signing mode:** `Unsigned` ← zaroori hai
+> - **Preset name:** `chatapp_media` (or any name)
+> - **Signing mode:** `Unsigned` ← required
 > - Save
 
-### 4. Config update karo
-`.env` mein:
+### 4. Update config
+In `.env`:
 ```env
 EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME=dqypvawr6
 EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET=chatapp_media
@@ -202,7 +206,7 @@ eas login
 eas build --platform android --profile preview
 ```
 
-**iOS (Apple Developer Account chahiye — $99/year):**
+**iOS (requires Apple Developer Account — $99/year):**
 ```bash
 eas build --platform ios --profile preview
 ```
@@ -231,6 +235,10 @@ users/{uid}
   ├── username: string (unique, lowercase)
   ├── email: string
   ├── color: string (hex)
+  ├── photoURL: string (optional)
+  ├── expoPushToken: string (set automatically on app open)
+  ├── online: boolean
+  ├── lastSeen: timestamp
   └── createdAt: timestamp
 
 usernames/{username}
@@ -241,6 +249,7 @@ contacts/{myUid}/list/{otherUid}
   ├── name: string
   ├── username: string
   ├── color: string
+  ├── photoURL: string (optional)
   ├── lastMessage: string
   ├── lastMessageAt: timestamp
   ├── lastSenderId: string
@@ -254,6 +263,7 @@ messages/{uid1_uid2}/msgs/{msgId}
   ├── mediaName: string (optional)
   ├── mediaMime: string (optional)
   ├── senderId: string
+  ├── readAt: timestamp (optional — set when recipient reads)
   └── timestamp: timestamp
 
 friendRequests/{fromUid_toUid}
@@ -264,22 +274,34 @@ friendRequests/{fromUid_toUid}
   ├── fromColor: string
   ├── status: 'pending' | 'accepted'
   └── createdAt: timestamp
+
+calls/{callId}
+  ├── callerId: string
+  ├── callerName: string
+  ├── callerColor: string
+  ├── callerPhotoURL: string (optional)
+  ├── receiverId: string
+  ├── status: 'ringing' | 'active' | 'ended' | 'rejected'
+  ├── offer: object (WebRTC SDP)
+  ├── answer: object (WebRTC SDP)
+  └── createdAt: string
 ```
 
-> **Note:** Conversation ID = `[uid1, uid2].sort().join('_')` — alphabetically sorted so both users use same document path.
+> **Note:** Conversation ID = `[uid1, uid2].sort().join('_')` — alphabetically sorted so both users share the same document path.
 
 ---
 
 ## App Permissions
 
-### iOS (automatically added via app.json)
-- Camera — photos/videos lene ke liye
-- Photo Library — gallery se share karne ke liye
-- Microphone — audio recording ke liye
+### iOS (configured via app.json)
+- Camera — for photos/videos
+- Photo Library — for sharing from gallery
+- Microphone — for audio recording and calls
 
-### Android (automatically added via app.json)
+### Android (configured via app.json)
 - CAMERA
 - READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_MEDIA_AUDIO
 - READ/WRITE_EXTERNAL_STORAGE
 - RECORD_AUDIO
 - INTERNET
+- POST_NOTIFICATIONS (Android 13+)
