@@ -122,6 +122,34 @@ async function requestAppPermissions() {
   } catch {}
 }
 
+// Web ringtone using Web Audio API
+let _audioCtx: any = null;
+let _ringtoneInterval: any = null;
+
+function startWebRingtone() {
+  if (typeof window === 'undefined') return;
+  try {
+    _audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    function beep() {
+      if (!_audioCtx) return;
+      const osc = _audioCtx.createOscillator();
+      const gain = _audioCtx.createGain();
+      osc.connect(gain); gain.connect(_audioCtx.destination);
+      osc.frequency.value = 480; osc.type = 'sine';
+      gain.gain.setValueAtTime(0.4, _audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + 0.4);
+      osc.start(_audioCtx.currentTime); osc.stop(_audioCtx.currentTime + 0.4);
+    }
+    beep();
+    _ringtoneInterval = setInterval(beep, 1200);
+  } catch {}
+}
+
+function stopWebRingtone() {
+  if (_ringtoneInterval) { clearInterval(_ringtoneInterval); _ringtoneInterval = null; }
+  if (_audioCtx) { _audioCtx.close().catch(() => {}); _audioCtx = null; }
+}
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const { user } = useAuth();
@@ -178,6 +206,27 @@ export default function RootLayout() {
       stopContactsListener();
     }
   }, [user]);
+
+  // Ringtone — play when incoming call arrives, stop when answered/rejected
+  useEffect(() => {
+    if (incomingCall) {
+      if (Platform.OS === 'web') {
+        startWebRingtone();
+      } else {
+        try { const InCallManager = require('react-native-incall-manager').default; InCallManager.startRingtone('_DEFAULT_'); } catch {}
+      }
+    } else {
+      if (Platform.OS === 'web') {
+        stopWebRingtone();
+      } else {
+        try { const InCallManager = require('react-native-incall-manager').default; InCallManager.stopRingtone(); } catch {}
+      }
+    }
+    return () => {
+      if (Platform.OS === 'web') stopWebRingtone();
+      else { try { const InCallManager = require('react-native-incall-manager').default; InCallManager.stopRingtone(); } catch {} }
+    };
+  }, [incomingCall]);
 
   function handleAcceptCall() {
     if (!incomingCall) return;
