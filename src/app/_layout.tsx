@@ -119,9 +119,23 @@ async function requestAppPermissions() {
       PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO,
       PermissionsAndroid.PERMISSIONS.READ_MEDIA_AUDIO,
     ]);
-    // Android 13+ requires explicit notification permission
+  } catch {}
+  // Android 13+ POST_NOTIFICATIONS (separate request)
+  try {
     const postNotif = (PermissionsAndroid.PERMISSIONS as any).POST_NOTIFICATIONS;
-    if (postNotif) await PermissionsAndroid.request(postNotif);
+    if (postNotif) {
+      const result = await PermissionsAndroid.request(postNotif);
+      if (result === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+        Alert.alert(
+          'Notifications Blocked',
+          'Call notifications ke liye Settings mein Notifications allow karein.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => { try { require('react-native').Linking.openSettings(); } catch {} } },
+          ]
+        );
+      }
+    }
   } catch {}
 }
 
