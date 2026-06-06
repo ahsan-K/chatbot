@@ -9,6 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.chatapp.app",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "supportsTablet": false,
       "icon": "./assets/expo.icon",
       "infoPlist": {
