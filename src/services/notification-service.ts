@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import { collection, doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
 import { Platform } from 'react-native';
 
 import { db } from '@/config/firebase';
@@ -42,9 +42,14 @@ export async function registerForPushNotifications(uid: string): Promise<void> {
     });
   }
 
-  const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-  const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
-  await updateDoc(doc(db, 'users', uid), { expoPushToken: token });
+  try {
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+    const token = tokenData.data;
+    if (token) {
+      await setDoc(doc(db, 'users', uid), { expoPushToken: token }, { merge: true });
+    }
+  } catch {}
 }
 
 // ── Native: send push to another user via Expo Push API ─────────────────────
@@ -91,6 +96,9 @@ export async function sendCallPushNotification(
     const token = snap.data()?.expoPushToken;
     if (!token) return;
 
+    // Also update the call doc with a 'notified' flag as fallback
+    await setDoc(doc(db, 'calls', callId), { pushSentAt: new Date().toISOString() }, { merge: true });
+
     await fetch('https://exp.host/push/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -101,9 +109,8 @@ export async function sendCallPushNotification(
         sound: 'default',
         priority: 'high',
         channelId: 'calls',
-        categoryIdentifier: 'INCOMING_CALL',
         data: { type: 'call', callId, callerId },
-        ttl: 30,
+        _displayInForeground: true,
       }),
     });
   } catch {}
