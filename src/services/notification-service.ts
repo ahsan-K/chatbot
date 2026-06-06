@@ -78,6 +78,38 @@ export async function sendPushNotification(
   }
 }
 
+// ── Native: send call push notification with Accept/Decline actions ──────────
+
+export async function sendCallPushNotification(
+  toUid: string,
+  callerName: string,
+  callId: string,
+  callerId: string
+): Promise<void> {
+  if (Platform.OS === 'web') return;
+  try {
+    const snap = await getDoc(doc(db, 'users', toUid));
+    const token = snap.data()?.expoPushToken;
+    if (!token) return;
+
+    await fetch('https://exp.host/push/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: token,
+        title: '📞 Incoming Call',
+        body: `${callerName} is calling you...`,
+        sound: 'default',
+        priority: 'high',
+        channelId: 'calls',
+        categoryIdentifier: 'INCOMING_CALL',
+        data: { type: 'call', callId, callerId },
+        ttl: 30,
+      }),
+    });
+  } catch {}
+}
+
 // ── Web: browser Notification API ───────────────────────────────────────────
 
 async function requestWebNotificationPermission(): Promise<void> {

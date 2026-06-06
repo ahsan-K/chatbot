@@ -13,6 +13,7 @@ import { PermissionsAndroid, Platform } from 'react-native';
 import { MediaStream, RTCIceCandidate, RTCPeerConnection, RTCSessionDescription, mediaDevices } from 'react-native-webrtc';
 
 import { db } from '@/config/firebase';
+import { sendCallPushNotification } from '@/services/notification-service';
 
 const STUN = {
   iceServers: [
@@ -96,10 +97,11 @@ export async function startCall(
   const offer = await _pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: false } as any);
   await _pc.setLocalDescription(new RTCSessionDescription(offer));
 
-  // Step 3: Update call document with offer
+  // Step 3: Update call document with offer + send push notification to receiver
   await updateDoc(doc(db, 'calls', callId), {
     offer: { type: offer.type, sdp: offer.sdp },
   });
+  sendCallPushNotification(otherUid, myName, callId, myUid);
 
   const unsubAnswer = onSnapshot(doc(db, 'calls', callId), async snap => {
     const data = snap.data();

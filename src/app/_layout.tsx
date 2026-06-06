@@ -155,16 +155,50 @@ export default function RootLayout() {
   const { user } = useAuth();
   const [incomingCall, setIncomingCall] = useState<CallData | null>(null);
 
-  // Request permissions on startup
+  // Request permissions + register call notification category
   useEffect(() => {
     requestAppPermissions();
+    if (Platform.OS !== 'web') {
+      Notifications.setNotificationCategoryAsync('INCOMING_CALL', [
+        {
+          identifier: 'ACCEPT',
+          buttonTitle: '✅ Accept',
+          options: { opensAppToForeground: true },
+        },
+        {
+          identifier: 'DECLINE',
+          buttonTitle: '❌ Decline',
+          options: { opensAppToForeground: false, isDestructive: true },
+        },
+      ]).catch(() => {});
+
+      Notifications.setNotificationChannelAsync('calls', {
+        name: 'Calls',
+        importance: Notifications.AndroidImportance.MAX,
+        sound: 'default',
+        vibrationPattern: [0, 500, 500, 500],
+        lightColor: '#0059f7',
+      }).catch(() => {});
+    }
   }, []);
 
-  // Navigate to chat when user taps a notification
+  // Handle notification taps and actions
   useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener(response => {
-      const senderUid = response.notification.request.content.data?.senderUid;
-      if (senderUid) router.push(`/chat/${senderUid}` as any);
+      const data = response.notification.request.content.data;
+      const action = response.actionIdentifier;
+
+      if (data?.type === 'call') {
+        const callId = data.callId as string;
+        const callerId = data.callerId as string;
+        if (action === 'DECLINE') {
+          rejectCall(callId);
+        } else {
+          router.push(`/call/${callerId}?callId=${callId}` as any);
+        }
+      } else if (data?.senderUid) {
+        router.push(`/chat/${data.senderUid as string}` as any);
+      }
     });
     return () => sub.remove();
   }, []);
