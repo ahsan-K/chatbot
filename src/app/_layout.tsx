@@ -119,6 +119,9 @@ async function requestAppPermissions() {
       PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO,
       PermissionsAndroid.PERMISSIONS.READ_MEDIA_AUDIO,
     ]);
+    // Android 13+ requires explicit notification permission
+    const postNotif = (PermissionsAndroid.PERMISSIONS as any).POST_NOTIFICATIONS;
+    if (postNotif) await PermissionsAndroid.request(postNotif);
   } catch {}
 }
 
