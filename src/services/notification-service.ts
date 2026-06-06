@@ -15,26 +15,7 @@ export async function registerForPushNotifications(uid: string): Promise<void> {
   }
   if (!Device.isDevice) return;
 
-  // Set handler here (not at module level) to avoid crash before Firebase init
-  try {
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldShowBanner: true,
-        shouldShowList: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-      }),
-    });
-  } catch {}
-
-  try {
-    const { status: existing } = await Notifications.getPermissionsAsync();
-    if (existing !== 'granted') {
-      await Notifications.requestPermissionsAsync();
-    }
-  } catch {}
-
+  // Set up notification channels only (safe - no Firebase required)
   if (Platform.OS === 'android') {
     Notifications.setNotificationChannelAsync('messages', {
       name: 'Messages', importance: Notifications.AndroidImportance.MAX,
@@ -46,14 +27,20 @@ export async function registerForPushNotifications(uid: string): Promise<void> {
     }).catch(() => {});
   }
 
-  try {
-    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-    const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
-    const token = tokenData.data;
-    if (token) {
-      await setDoc(doc(db, 'users', uid), { expoPushToken: token }, { merge: true });
-    }
-  } catch {}
+  // Push token registration — only attempt if Firebase is available
+  // This requires proper FCM setup via: eas push:android:upload
+  // See: https://docs.expo.dev/push-notifications/fcm-credentials/
+  setTimeout(async () => {
+    try {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== 'granted') return;
+      const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+      const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+      if (tokenData?.data) {
+        await setDoc(doc(db, 'users', uid), { expoPushToken: tokenData.data }, { merge: true });
+      }
+    } catch {}
+  }, 3000); // Delay 3s to ensure Firebase is initialized
 }
 
 // ── Native: send push to another user via Expo Push API ─────────────────────
