@@ -37,6 +37,10 @@ yarn-error.*
 # Claude Code
 .claude/
 
+# Firebase
+google-services.json
+GoogleService-Info.plist
+
 # Build artifacts
 *.apk
 *.aab
