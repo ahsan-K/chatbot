@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from '@/config/firebase';
+import { sendCallPushNotification } from '@/services/notification-service';
 
 export interface CallData {
   id: string;
@@ -85,6 +86,7 @@ export async function startCall(
     offer: { type: offer.type, sdp: offer.sdp },
     createdAt: new Date().toISOString(),
   });
+  sendCallPushNotification(otherUid, myName, callId, myUid);
 
   const unsubAnswer = onSnapshot(doc(db, 'calls', callId), async snap => {
     const data = snap.data();

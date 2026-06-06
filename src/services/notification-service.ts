@@ -86,7 +86,6 @@ export async function sendCallPushNotification(
   callId: string,
   callerId: string
 ): Promise<void> {
-  if (Platform.OS === 'web') return;
   try {
     const snap = await getDoc(doc(db, 'users', toUid));
     const token = snap.data()?.expoPushToken;

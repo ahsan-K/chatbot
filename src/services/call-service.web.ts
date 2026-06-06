@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from '@/config/firebase';
+import { sendCallPushNotification } from '@/services/notification-service';
 
 export interface CallData {
   id: string;
@@ -65,13 +66,14 @@ export async function startCall(
   otherUid: string,
   myPhotoURL?: string
 ): Promise<() => void> {
-  // Step 1: Immediately notify receiver
+  // Step 1: Immediately notify receiver + send push notification
   await setDoc(doc(db, 'calls', callId), {
     callerId: myUid, callerName: myName, callerColor: myColor,
     callerPhotoURL: myPhotoURL ?? null,
     receiverId: otherUid, status: 'ringing',
     offer: null, createdAt: new Date().toISOString(),
   });
+  sendCallPushNotification(otherUid, myName, callId, myUid);
 
   // Step 2: Get mic and create offer
   _pc = new RTCPeerConnection(STUN);
