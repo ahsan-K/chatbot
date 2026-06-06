@@ -79,10 +79,15 @@ export async function startCall(
   stream.getTracks().forEach(t => _pc!.addTrack(t, stream));
 
   _pc.ontrack = (event) => {
-    const audio = new window.Audio();
-    audio.srcObject = event.streams[0];
-    audio.autoplay = true;
-    audio.play().catch(() => {});
+    try {
+      const remoteStream = event.streams?.[0] ?? new MediaStream([event.track]);
+      const audio = document.createElement('audio');
+      audio.srcObject = remoteStream;
+      audio.autoplay = true;
+      audio.setAttribute('playsinline', 'true');
+      document.body.appendChild(audio);
+      audio.play().catch(() => {});
+    } catch {}
   };
 
   _pc.onicecandidate = async e => {
@@ -124,10 +129,15 @@ export async function answerCall(callId: string): Promise<() => void> {
   stream.getTracks().forEach(t => _pc!.addTrack(t, stream));
 
   _pc.ontrack = (event) => {
-    const audio = new window.Audio();
-    audio.srcObject = event.streams[0];
-    audio.autoplay = true;
-    audio.play().catch(() => {});
+    try {
+      const remoteStream = event.streams?.[0] ?? new MediaStream([event.track]);
+      const audio = document.createElement('audio');
+      audio.srcObject = remoteStream;
+      audio.autoplay = true;
+      audio.setAttribute('playsinline', 'true');
+      document.body.appendChild(audio);
+      audio.play().catch(() => {});
+    } catch {}
   };
 
   _pc.onicecandidate = async e => {
