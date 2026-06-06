@@ -177,22 +177,13 @@ export default function RootLayout() {
     requestAppPermissions();
     if (Platform.OS !== 'web') {
       Notifications.setNotificationCategoryAsync('INCOMING_CALL', [
-        {
-          identifier: 'ACCEPT',
-          buttonTitle: '✅ Accept',
-          options: { opensAppToForeground: true },
-        },
-        {
-          identifier: 'DECLINE',
-          buttonTitle: '❌ Decline',
-          options: { opensAppToForeground: false, isDestructive: true },
-        },
+        { identifier: 'ACCEPT', buttonTitle: '✅ Accept', options: { opensAppToForeground: true } },
+        { identifier: 'DECLINE', buttonTitle: '❌ Decline', options: { opensAppToForeground: false } },
       ]).catch(() => {});
 
       Notifications.setNotificationChannelAsync('calls', {
         name: 'Calls',
         importance: Notifications.AndroidImportance.MAX,
-        sound: 'default',
         vibrationPattern: [0, 500, 500, 500],
         lightColor: '#0059f7',
       }).catch(() => {});
@@ -234,7 +225,7 @@ export default function RootLayout() {
           });
         }
       });
-      registerForPushNotifications(user.uid);
+      registerForPushNotifications(user.uid).catch(() => {});
       setOnlineStatus(user.uid, true);
       const appStateSub = AppState.addEventListener('change', state => {
         setOnlineStatus(user.uid, state === 'active');

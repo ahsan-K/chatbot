@@ -25,43 +25,32 @@ export async function registerForPushNotifications(uid: string): Promise<void> {
   }
   if (!Device.isDevice) return;
 
-  // Request permission — on Android 13+ this requests POST_NOTIFICATIONS
-  const { status: existing } = await Notifications.getPermissionsAsync();
-  let finalStatus = existing;
-  if (existing !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
-  }
+  try {
+    const { status: existing } = await Notifications.getPermissionsAsync();
+    if (existing !== 'granted') {
+      await Notifications.requestPermissionsAsync();
+    }
+  } catch {}
 
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('messages', {
+    Notifications.setNotificationChannelAsync('messages', {
       name: 'Messages', importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250], lightColor: '#0059f7', sound: 'default',
     }).catch(() => {});
-    await Notifications.setNotificationChannelAsync('calls', {
+    Notifications.setNotificationChannelAsync('calls', {
       name: 'Calls', importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 500, 500, 500], lightColor: '#0059f7', sound: 'default',
     }).catch(() => {});
   }
 
-  // Even if permission is not granted, try to get token for delivery
-  // (token can be obtained without permission on some Android versions)
   try {
     const projectId = Constants.expoConfig?.extra?.eas?.projectId;
     const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
     const token = tokenData.data;
     if (token) {
-      await setDoc(doc(db, 'users', uid), {
-        expoPushToken: token,
-        notifPermission: finalStatus,
-      }, { merge: true });
+      await setDoc(doc(db, 'users', uid), { expoPushToken: token }, { merge: true });
     }
-  } catch (e: any) {
-    // Save error info to help diagnose
-    await setDoc(doc(db, 'users', uid), {
-      pushTokenError: e?.message ?? 'unknown',
-    }, { merge: true }).catch(() => {});
-  }
+  } catch {}
 }
 
 // ── Native: send push to another user via Expo Push API ─────────────────────
