@@ -37,6 +37,7 @@ function mapDoc(d: any): Conversation {
       username: data.username ?? '',
       color: data.color ?? '#0059f7',
       email: data.email ?? '',
+      photoURL: data.photoURL ?? undefined,
     },
     lastMessage: data.lastMessage,
     lastMessageAt:

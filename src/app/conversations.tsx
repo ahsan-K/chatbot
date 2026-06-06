@@ -52,9 +52,13 @@ function ConvItem({ conv, user, onPress }: { conv: Conversation; user: Conversat
   return (
     <TouchableOpacity style={styles.item} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.avatarWrap}>
-        <View style={[styles.avatar, { backgroundColor: user.color }]}>
-          <Text style={styles.avatarText}>{getInitials(user.name)}</Text>
-        </View>
+        {user.photoURL ? (
+          <Image source={{ uri: user.photoURL }} style={styles.avatarImg} />
+        ) : (
+          <View style={[styles.avatar, { backgroundColor: user.color }]}>
+            <Text style={styles.avatarText}>{getInitials(user.name)}</Text>
+          </View>
+        )}
         {user.online && <View style={styles.onlineDot} />}
       </View>
 
@@ -252,6 +256,7 @@ const styles = StyleSheet.create({
     width: 52, height: 52, borderRadius: 26,
     alignItems: 'center', justifyContent: 'center',
   },
+  avatarImg: { width: 52, height: 52, borderRadius: 26 },
   avatarText: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   onlineDot: {
     position: 'absolute', bottom: 1, right: 1,

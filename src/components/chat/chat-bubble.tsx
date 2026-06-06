@@ -5,12 +5,13 @@ import { ChatMedia, ChatMessage } from './types';
 
 type BubbleProps = {
   message: ChatMessage;
-  // Human mode props
   isMine?: boolean;
   senderColor?: string;
   senderInitials?: string;
+  senderPhoto?: string;
   myColor?: string;
   myInitials?: string;
+  myPhoto?: string;
   showActions?: boolean;
   onMediaPress?: (media: ChatMedia) => void;
 };
@@ -86,7 +87,10 @@ const audioStyles = StyleSheet.create({
   time: { fontSize: 10, fontWeight: '600' },
 });
 
-function AvatarCircle({ color, initials, size = 40 }: { color: string; initials: string; size?: number }) {
+function AvatarCircle({ color, initials, photo, size = 40 }: { color: string; initials: string; photo?: string; size?: number }) {
+  if (photo) {
+    return <Image source={{ uri: photo }} style={{ width: size, height: size, borderRadius: size / 2 }} />;
+  }
   return (
     <View style={[styles.avatarCircle, { backgroundColor: color, width: size, height: size, borderRadius: size / 2 }]}>
       <Text style={[styles.avatarText, { fontSize: size * 0.4 }]}>{initials}</Text>
@@ -150,10 +154,11 @@ function MediaContent({ media, isBot, onPress }: { media: ChatMedia; isBot: bool
 }
 
 // Left-side bubble (received: bot or other user)
-function LeftBubble({ message, avatarColor, avatarInitials, showActions, onMediaPress }: {
+function LeftBubble({ message, avatarColor, avatarInitials, avatarPhoto, showActions, onMediaPress }: {
   message: ChatMessage;
   avatarColor: string;
   avatarInitials: string;
+  avatarPhoto?: string;
   showActions: boolean;
   onMediaPress?: (media: ChatMedia) => void;
 }) {
@@ -163,7 +168,7 @@ function LeftBubble({ message, avatarColor, avatarInitials, showActions, onMedia
   return (
     <View style={styles.leftRow}>
       <View style={[styles.leftAvatarWrap]}>
-        <AvatarCircle color={avatarColor} initials={avatarInitials} size={40} />
+        <AvatarCircle color={avatarColor} initials={avatarInitials} photo={avatarPhoto} size={40} />
       </View>
 
       <View style={styles.leftCol}>
@@ -197,10 +202,11 @@ function LeftBubble({ message, avatarColor, avatarInitials, showActions, onMedia
 }
 
 // Right-side bubble (sent: me / user)
-function RightBubble({ message, avatarColor, avatarInitials, onMediaPress }: {
+function RightBubble({ message, avatarColor, avatarInitials, avatarPhoto, onMediaPress }: {
   message: ChatMessage;
   avatarColor: string;
   avatarInitials: string;
+  avatarPhoto?: string;
   onMediaPress?: (media: ChatMedia) => void;
 }) {
   const isRead = message.status === 'read';
@@ -231,7 +237,7 @@ function RightBubble({ message, avatarColor, avatarInitials, onMediaPress }: {
       </View>
 
       <View style={styles.rightAvatarWrap}>
-        <AvatarCircle color={avatarColor} initials={avatarInitials} size={40} />
+        <AvatarCircle color={avatarColor} initials={avatarInitials} photo={avatarPhoto} size={40} />
       </View>
     </View>
   );
@@ -242,12 +248,13 @@ export function ChatBubble({
   isMine,
   senderColor,
   senderInitials,
+  senderPhoto,
   myColor,
   myInitials,
+  myPhoto,
   showActions,
   onMediaPress,
 }: BubbleProps) {
-  // Determine layout: isMine prop (human mode) OR legacy sender field (bot mode)
   const mine = isMine !== undefined ? isMine : message.sender === 'user';
   const actions = showActions !== undefined ? showActions : message.sender === 'bot';
 
@@ -261,6 +268,7 @@ export function ChatBubble({
       message={message}
       avatarColor={rightColor}
       avatarInitials={rightInitials}
+      avatarPhoto={myPhoto}
       onMediaPress={onMediaPress}
     />
   ) : (
@@ -268,6 +276,7 @@ export function ChatBubble({
       message={message}
       avatarColor={leftColor}
       avatarInitials={leftInitials}
+      avatarPhoto={senderPhoto}
       showActions={actions}
       onMediaPress={onMediaPress}
     />

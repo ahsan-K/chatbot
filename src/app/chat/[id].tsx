@@ -107,9 +107,9 @@ export default function HumanChatScreen() {
     try {
       await sendMessage(
         firebaseUser.uid,
-        { name: me.name, username: me.username ?? '', color: me.color },
+        { name: me.name, username: me.username ?? '', color: me.color, photoURL: me.photoURL },
         other.uid,
-        { name: other.name, username: other.username, color: other.color },
+        { name: other.name, username: other.username, color: other.color, photoURL: other.photoURL },
         text
       );
     } catch (e) {
@@ -123,9 +123,9 @@ export default function HumanChatScreen() {
       const url = await uploadMedia(convId, media);
       await sendMediaMessage(
         firebaseUser.uid,
-        { name: me.name, username: me.username ?? '', color: me.color },
+        { name: me.name, username: me.username ?? '', color: me.color, photoURL: me.photoURL },
         other.uid,
-        { name: other.name, username: other.username, color: other.color },
+        { name: other.name, username: other.username, color: other.color, photoURL: other.photoURL },
         media,
         url
       );
@@ -175,8 +175,10 @@ export default function HumanChatScreen() {
               isMine={item.sender === 'me'}
               senderColor={other.color}
               senderInitials={getInitials(other.name)}
+              senderPhoto={other.photoURL}
               myColor={me.color}
               myInitials={getInitials(me.name)}
+              myPhoto={me.photoURL}
               showActions={false}
               onMediaPress={setPreviewMedia}
             />

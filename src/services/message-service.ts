@@ -30,9 +30,9 @@ function tsToDisplay(ts: any): string {
 // Send a text message
 export async function sendMessage(
   myUid: string,
-  myProfile: { name: string; username: string; color: string },
+  myProfile: { name: string; username: string; color: string; photoURL?: string },
   otherUid: string,
-  otherProfile: { name: string; username: string; color: string },
+  otherProfile: { name: string; username: string; color: string; photoURL?: string },
   text: string
 ) {
   const convId = getConvId(myUid, otherUid);
@@ -50,9 +50,9 @@ export async function sendMessage(
 // Send a media message (URL already uploaded to Storage)
 export async function sendMediaMessage(
   myUid: string,
-  myProfile: { name: string; username: string; color: string },
+  myProfile: { name: string; username: string; color: string; photoURL?: string },
   otherUid: string,
-  otherProfile: { name: string; username: string; color: string },
+  otherProfile: { name: string; username: string; color: string; photoURL?: string },
   media: ChatMedia,
   mediaUrl: string
 ) {
@@ -74,9 +74,9 @@ export async function sendMediaMessage(
 
 async function _updateContacts(
   myUid: string,
-  myProfile: { name: string; username: string; color: string },
+  myProfile: { name: string; username: string; color: string; photoURL?: string },
   otherUid: string,
-  otherProfile: { name: string; username: string; color: string },
+  otherProfile: { name: string; username: string; color: string; photoURL?: string },
   lastMessage: string
 ) {
   // Update sender's own contact entry
@@ -87,6 +87,7 @@ async function _updateContacts(
       name: otherProfile.name,
       username: otherProfile.username,
       color: otherProfile.color,
+      photoURL: otherProfile.photoURL ?? null,
       lastMessage,
       lastMessageAt: serverTimestamp(),
       lastSenderId: myUid,
@@ -104,6 +105,7 @@ async function _updateContacts(
         name: myProfile.name,
         username: myProfile.username,
         color: myProfile.color,
+        photoURL: myProfile.photoURL ?? null,
         lastMessage,
         lastMessageAt: serverTimestamp(),
         lastSenderId: myUid,
