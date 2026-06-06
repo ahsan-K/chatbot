@@ -113,7 +113,6 @@ export default function HumanChatScreen() {
         text
       );
     } catch (e) {
-      console.error('Send failed:', e);
     }
   }
 
@@ -131,7 +130,6 @@ export default function HumanChatScreen() {
         url
       );
     } catch (e: any) {
-      console.error('Media send failed:', e);
       Alert.alert('Upload Failed', e?.message ?? 'Media send nahi hui. Dobara try karein.');
     }
   }

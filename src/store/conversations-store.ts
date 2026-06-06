@@ -68,17 +68,14 @@ export function startContactsListener(myUid: string): () => void {
       _loaded = true;
       notify();
     })
-    .catch(e => console.error('[contacts] getDocs error:', e));
 
   // Real-time listener for future changes
   _unsubscribe = onSnapshot(
     q,
     snap => {
-      console.log('[contacts] onSnapshot:', snap.docs.length);
       _conversations = sortConvs(snap.docs.map(mapDoc));
       notify();
     },
-    error => console.error('[contacts] onSnapshot error:', error.code, error.message)
   );
 
   return _unsubscribe;

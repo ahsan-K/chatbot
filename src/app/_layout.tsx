@@ -164,9 +164,7 @@ export default function RootLayout() {
       const unsubNotif = listenForIncomingMessages(user.uid, (name, msg, senderUid) => {
         showLocalNotification(name, msg, senderUid);
       });
-      console.log('[calls] Setting up listener for uid:', user.uid);
       const unsubCalls = listenForIncomingCalls(user.uid, call => {
-        console.log('[calls] Incoming call detected!', call.callerName, call.id);
         setIncomingCall(call);
       });
       return () => {

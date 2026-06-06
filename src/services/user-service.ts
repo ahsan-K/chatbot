@@ -65,13 +65,10 @@ export async function createUserProfile(
 
 // Get all users — reads usernames collection (public) then fetches each profile
 export async function getAllUsers(currentUid: string): Promise<UserProfile[]> {
-  console.log('[getAllUsers] step 1 — reading usernames...');
   let snap: any;
   try {
     snap = await getDocs(collection(db, 'usernames'));
-    console.log('[getAllUsers] step 1 OK — docs:', snap.size);
   } catch (e: any) {
-    console.error('[getAllUsers] step 1 FAILED (usernames):', e.code, e.message);
     throw e;
   }
 
@@ -79,17 +76,14 @@ export async function getAllUsers(currentUid: string): Promise<UserProfile[]> {
     .map((d: any) => d.data().uid as string)
     .filter((uid: string) => uid && uid !== currentUid);
 
-  console.log('[getAllUsers] step 2 — fetching profiles for:', uids);
   if (uids.length === 0) return [];
 
   const profiles = await Promise.all(
     uids.map(async (uid: string) => {
       try {
         const d = await getDoc(doc(db, 'users', uid));
-        console.log('[getAllUsers] profile', uid, d.exists() ? 'OK' : 'missing');
         return d;
       } catch (e: any) {
-        console.error('[getAllUsers] step 2 FAILED (user', uid, '):', e.code, e.message);
         throw e;
       }
     })
@@ -251,7 +245,6 @@ export function listenToPendingRequests(
         .filter(r => (r as any).status === 'pending');
       cb(pending);
     },
-    err => console.error('[friendRequests] listener error:', err.code, err.message)
   );
 }
 

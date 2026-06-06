@@ -107,7 +107,6 @@ export default function ExploreScreen() {
         setStatuses(map);
         setResults(users);
       })
-      .catch(e => console.error('[explore] load error:', e))
       .finally(() => setSearching(false));
   }, [firebaseUser]);
 
