@@ -6,16 +6,6 @@ import { Platform } from 'react-native';
 
 import { db } from '@/config/firebase';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
-
 // ── Native: register Expo push token ────────────────────────────────────────
 
 export async function registerForPushNotifications(uid: string): Promise<void> {
@@ -24,6 +14,19 @@ export async function registerForPushNotifications(uid: string): Promise<void> {
     return;
   }
   if (!Device.isDevice) return;
+
+  // Set handler here (not at module level) to avoid crash before Firebase init
+  try {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+      }),
+    });
+  } catch {}
 
   try {
     const { status: existing } = await Notifications.getPermissionsAsync();
