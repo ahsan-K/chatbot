@@ -78,6 +78,13 @@ export async function startCall(
   const stream = await getLocalAudioStream();
   stream.getTracks().forEach(t => _pc!.addTrack(t, stream));
 
+  _pc.ontrack = (event) => {
+    const audio = new window.Audio();
+    audio.srcObject = event.streams[0];
+    audio.autoplay = true;
+    audio.play().catch(() => {});
+  };
+
   _pc.onicecandidate = async e => {
     if (e.candidate) {
       await addDoc(collection(db, 'calls', callId, 'callerCandidates'), e.candidate.toJSON());
@@ -115,6 +122,13 @@ export async function answerCall(callId: string): Promise<() => void> {
   _pc = new RTCPeerConnection(STUN);
   const stream = await getLocalAudioStream();
   stream.getTracks().forEach(t => _pc!.addTrack(t, stream));
+
+  _pc.ontrack = (event) => {
+    const audio = new window.Audio();
+    audio.srcObject = event.streams[0];
+    audio.autoplay = true;
+    audio.play().catch(() => {});
+  };
 
   _pc.onicecandidate = async e => {
     if (e.candidate) {
