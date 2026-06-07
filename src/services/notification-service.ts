@@ -51,7 +51,7 @@ export async function sendPushNotification(
     const token = snap.data()?.expoPushToken;
     if (!token) return;
 
-    await fetch('https://exp.host/push/send', {
+    await fetch('https://exp.host/--/api/v2/push/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -85,7 +85,7 @@ export async function sendCallPushNotification(
     // Also update the call doc with a 'notified' flag as fallback
     await setDoc(doc(db, 'calls', callId), { pushSentAt: new Date().toISOString() }, { merge: true });
 
-    await fetch('https://exp.host/push/send', {
+    const res = await fetch('https://exp.host/--/api/v2/push/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -99,7 +99,16 @@ export async function sendCallPushNotification(
         _displayInForeground: true,
       }),
     });
-  } catch {}
+    const result = await res.json();
+    // Save push result to Firestore so we can diagnose
+    await setDoc(doc(db, 'calls', callId), {
+      pushResult: JSON.stringify(result?.data ?? result),
+    }, { merge: true });
+  } catch (e: any) {
+    await setDoc(doc(db, 'calls', callId), {
+      pushError: e?.message ?? 'unknown',
+    }, { merge: true }).catch(() => {});
+  }
 }
 
 // ── Web: browser Notification API ───────────────────────────────────────────
