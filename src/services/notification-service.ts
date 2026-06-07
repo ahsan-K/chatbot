@@ -15,7 +15,7 @@ export async function registerForPushNotifications(uid: string): Promise<void> {
   }
   if (!Device.isDevice) return;
 
-  // Set up notification channels only (safe - no Firebase required)
+  // Set up notification channels (safe - no Firebase Messaging required)
   if (Platform.OS === 'android') {
     Notifications.setNotificationChannelAsync('messages', {
       name: 'Messages', importance: Notifications.AndroidImportance.MAX,
@@ -27,20 +27,10 @@ export async function registerForPushNotifications(uid: string): Promise<void> {
     }).catch(() => {});
   }
 
-  // Push token registration — only attempt if Firebase is available
-  // This requires proper FCM setup via: eas push:android:upload
-  // See: https://docs.expo.dev/push-notifications/fcm-credentials/
-  setTimeout(async () => {
-    try {
-      const { status } = await Notifications.requestPermissionsAsync();
-      if (status !== 'granted') return;
-      const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-      const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
-      if (tokenData?.data) {
-        await setDoc(doc(db, 'users', uid), { expoPushToken: tokenData.data }, { merge: true });
-      }
-    } catch {}
-  }, 3000); // Delay 3s to ensure Firebase is initialized
+  // NOTE: Push token registration requires Firebase Cloud Messaging to be enabled.
+  // To enable: Firebase Console → Project Settings → Cloud Messaging → Enable FCM API
+  // Then: eas push:android:upload --fcm-v1-service-account-key-path ./service-account.json
+  // Until then, background push notifications are disabled to prevent app crashes.
 }
 
 // ── Native: send push to another user via Expo Push API ─────────────────────
