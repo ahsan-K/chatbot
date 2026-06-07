@@ -41,6 +41,9 @@ yarn-error.*
 # google-services.json
 # GoogleService-Info.plist
 
+# Firebase Admin SDK service account keys
+*firebase-adminsdk*.json
+
 # Build artifacts
 *.apk
 *.aab

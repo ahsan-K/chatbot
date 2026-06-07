@@ -121,22 +121,40 @@ No custom indexes needed — all queries work automatically.
 
 ### 3. Push Notifications (FCM) Setup
 
-Push notifications (call alerts + messages) require native Firebase configuration files.
+Push notifications (call alerts + background messages) require the following setup.
 
-#### Android — google-services.json
-1. Firebase Console → **Project Settings** (gear icon)
-2. Scroll to **"Your apps"** → **Add app** → Android
-3. Package name: `com.chatapp.app`
-4. **Download `google-services.json`**
-5. Place the file in the project root: `chatbot/google-services.json`
+#### Step 1 — Enable Firebase Cloud Messaging API
+Firebase Console → **Project Settings** → **Cloud Messaging** tab → Enable **Firebase Cloud Messaging API (V1)**
 
-#### iOS — GoogleService-Info.plist
+#### Step 2 — Download Firebase config files
+
+**Android — google-services.json**
+1. Firebase Console → **Project Settings** → **Your apps** → **Add app** → Android
+2. Package name: `com.chatapp.app`
+3. Download `google-services.json` and place in project root
+
+**iOS — GoogleService-Info.plist**
 1. Firebase Console → **Project Settings** → **Your apps** → **Add app** → iOS
 2. Bundle ID: `com.chatapp.app`
-3. **Download `GoogleService-Info.plist`**
-4. Place the file in the project root: `chatbot/GoogleService-Info.plist`
+3. Download `GoogleService-Info.plist` and place in project root
 
-> **Note:** These files contain Firebase credentials. Keep the repository private or add them to `.gitignore` for public repos.
+#### Step 3 — Upload FCM Service Account Key to EAS
+
+1. Firebase Console → **Project Settings** → **Service Accounts** → **Generate New Private Key** → download JSON
+2. Run:
+```bash
+eas credentials -p android
+```
+3. Select your build profile → **Push notifications** → **FCM V1 service account key** → provide the downloaded JSON path
+
+#### Step 4 — Rebuild the app
+
+After uploading FCM credentials, rebuild:
+```bash
+eas build --platform android --profile preview --local
+```
+
+> **Note:** `google-services.json` and `GoogleService-Info.plist` contain Firebase credentials. Keep the repository private or add them to `.gitignore` for public repos.
 
 ---
 
