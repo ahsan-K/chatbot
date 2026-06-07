@@ -172,26 +172,22 @@ export default function RootLayout() {
   const { user } = useAuth();
   const [incomingCall, setIncomingCall] = useState<CallData | null>(null);
 
-  // Request permissions + register call notification category
+  // Request permissions + register call notification category (web/iOS only)
   useEffect(() => {
     requestAppPermissions();
-    if (Platform.OS !== 'web') {
+    if (Platform.OS === 'web') return;
+    // iOS only — Android expo-notifications requires Firebase which causes crash
+    if (Platform.OS === 'ios') {
       Notifications.setNotificationCategoryAsync('INCOMING_CALL', [
         { identifier: 'ACCEPT', buttonTitle: '✅ Accept', options: { opensAppToForeground: true } },
         { identifier: 'DECLINE', buttonTitle: '❌ Decline', options: { opensAppToForeground: false } },
       ]).catch(() => {});
-
-      Notifications.setNotificationChannelAsync('calls', {
-        name: 'Calls',
-        importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 500, 500, 500],
-        lightColor: '#0059f7',
-      }).catch(() => {});
     }
   }, []);
 
-  // Handle notification taps and actions
+  // Handle notification taps and actions (web/iOS only — Android uses Firestore)
   useEffect(() => {
+    if (Platform.OS === 'android') return;
     const sub = Notifications.addNotificationResponseReceivedListener(response => {
       const data = response.notification.request.content.data;
       const action = response.actionIdentifier;

@@ -1,41 +1,19 @@
-import Constants from 'expo-constants';
-import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
-import { collection, doc, getDoc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { Platform } from 'react-native';
 
 import { db } from '@/config/firebase';
 
-// ── Native: register Expo push token ────────────────────────────────────────
+// ── Native: register push token ──────────────────────────────────────────────
 
-export async function registerForPushNotifications(uid: string): Promise<void> {
+export async function registerForPushNotifications(_uid: string): Promise<void> {
   if (Platform.OS === 'web') {
     await requestWebNotificationPermission();
     return;
   }
-  if (!Device.isDevice) return;
-
-  // Set up notification channels (safe - no Firebase Messaging required)
-  if (Platform.OS === 'android') {
-    Notifications.setNotificationChannelAsync('messages', {
-      name: 'Messages', importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250], lightColor: '#0059f7', sound: 'default',
-    }).catch(() => {});
-    Notifications.setNotificationChannelAsync('calls', {
-      name: 'Calls', importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 500, 500, 500], lightColor: '#0059f7', sound: 'default',
-    }).catch(() => {});
-  }
-
-  // Register for push notifications (FCM credentials now configured via EAS)
-  try {
-    await Notifications.requestPermissionsAsync();
-    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-    const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
-    if (tokenData?.data) {
-      await setDoc(doc(db, 'users', uid), { expoPushToken: tokenData.data }, { merge: true });
-    }
-  } catch {}
+  // Android: expo-notifications requires Firebase Messaging SDK to be initialized.
+  // Notification channels and local notifications handled via in-app Firestore listeners.
+  // To enable background push: ensure Firebase Cloud Messaging is enabled in Firebase Console
+  // and FCM V1 credentials are configured via: eas credentials -p android
 }
 
 // ── Native: send push to another user via Expo Push API ─────────────────────
@@ -45,7 +23,7 @@ export async function sendPushNotification(
   senderName: string,
   message: string
 ): Promise<void> {
-  if (Platform.OS === 'web') return; // web uses local notifications instead
+  if (Platform.OS === 'web') return;
   try {
     const snap = await getDoc(doc(db, 'users', toUid));
     const token = snap.data()?.expoPushToken;
@@ -64,12 +42,10 @@ export async function sendPushNotification(
         data: { senderUid: toUid },
       }),
     });
-  } catch {
-    // Never block message sending due to notification failure
-  }
+  } catch {}
 }
 
-// ── Native: send call push notification with Accept/Decline actions ──────────
+// ── Native: send call push notification ──────────────────────────────────────
 
 export async function sendCallPushNotification(
   toUid: string,
@@ -82,10 +58,7 @@ export async function sendCallPushNotification(
     const token = snap.data()?.expoPushToken;
     if (!token) return;
 
-    // Also update the call doc with a 'notified' flag as fallback
-    await setDoc(doc(db, 'calls', callId), { pushSentAt: new Date().toISOString() }, { merge: true });
-
-    const res = await fetch('https://exp.host/--/api/v2/push/send', {
+    await fetch('https://exp.host/--/api/v2/push/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -99,16 +72,7 @@ export async function sendCallPushNotification(
         _displayInForeground: true,
       }),
     });
-    const result = await res.json();
-    // Save push result to Firestore so we can diagnose
-    await setDoc(doc(db, 'calls', callId), {
-      pushResult: JSON.stringify(result?.data ?? result),
-    }, { merge: true });
-  } catch (e: any) {
-    await setDoc(doc(db, 'calls', callId), {
-      pushError: e?.message ?? 'unknown',
-    }, { merge: true }).catch(() => {});
-  }
+  } catch {}
 }
 
 // ── Web: browser Notification API ───────────────────────────────────────────
@@ -123,7 +87,7 @@ async function requestWebNotificationPermission(): Promise<void> {
 function showWebNotification(title: string, body: string): void {
   if (typeof window === 'undefined' || !('Notification' in window)) return;
   if (Notification.permission !== 'granted') return;
-  if (document.visibilityState === 'visible') return; // app is in focus, no need
+  if (document.visibilityState === 'visible') return;
   new Notification(title, { body, icon: '/icon.png' });
 }
 
@@ -152,26 +116,21 @@ export function listenForIncomingMessages(
           onNotify(data.name, data.lastMessage ?? 'New message', uid);
         }
       }
-
       _prevUnread[uid] = unread;
     });
     _initialized = true;
   });
 }
 
-// ── Unified: show notification on current platform ──────────────────────────
+// ── Unified: show notification ────────────────────────────────────────────────
 
 export async function showLocalNotification(
   title: string,
   body: string,
-  senderUid: string
+  _senderUid: string
 ): Promise<void> {
   if (Platform.OS === 'web') {
     showWebNotification(title, body);
-  } else {
-    await Notifications.scheduleNotificationAsync({
-      content: { title, body, data: { senderUid }, sound: 'default' },
-      trigger: null,
-    });
   }
+  // Android: notifications shown via in-app overlay (Firestore-based)
 }
