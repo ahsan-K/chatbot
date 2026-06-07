@@ -59,7 +59,6 @@
         {
           "icon": "./assets/images/icon.png",
           "color": "#0059f7",
-          "defaultChannel": "messages",
           "sounds": []
         }
       ],
