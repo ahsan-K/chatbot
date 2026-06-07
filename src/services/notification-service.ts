@@ -1,34 +1,50 @@
-import Constants from 'expo-constants';
-import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
 import { collection, doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { Platform } from 'react-native';
 
 import { db } from '@/config/firebase';
 
 // ── Native: register push token ──────────────────────────────────────────────
+// Android: uses @react-native-firebase/messaging directly (avoids expo-notifications crash)
+// iOS/Web: uses expo-notifications
 
 export async function registerForPushNotifications(uid: string): Promise<void> {
   if (Platform.OS === 'web') {
     await requestWebNotificationPermission();
     return;
   }
-  if (!Device.isDevice) return;
 
-  // Set up notification channels
   if (Platform.OS === 'android') {
-    Notifications.setNotificationChannelAsync('messages', {
-      name: 'Messages', importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250], lightColor: '#0059f7', sound: 'default',
-    }).catch(() => {});
-    Notifications.setNotificationChannelAsync('calls', {
-      name: 'Calls', importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 500, 500, 500], lightColor: '#0059f7', sound: 'default',
-    }).catch(() => {});
+    try {
+      const messaging = require('@react-native-firebase/messaging').default;
+      await messaging().requestPermission();
+      const fcmToken = await messaging().getToken();
+      if (!fcmToken) return;
+
+      // Register FCM token with Expo Push Service to get ExponentPushToken
+      const res = await fetch('https://exp.host/--/api/v2/push/getExpoPushToken', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          deviceToken: fcmToken,
+          type: 'fcm',
+          experienceId: '@june2000/chatbot',
+          appId: '6bf07534-be49-48c3-b405-ec7d948ec3df',
+          development: false,
+        }),
+      });
+      const data = await res.json();
+      const expoPushToken = data?.data?.expoPushToken;
+      if (expoPushToken) {
+        await setDoc(doc(db, 'users', uid), { expoPushToken }, { merge: true });
+      }
+    } catch {}
+    return;
   }
 
-  // Register Expo Push Token (requires @react-native-firebase/app for Android)
+  // iOS: use expo-notifications
   try {
+    const Notifications = require('expo-notifications');
+    const Constants = require('expo-constants').default;
     await Notifications.requestPermissionsAsync();
     const projectId = Constants.expoConfig?.extra?.eas?.projectId;
     const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
@@ -38,7 +54,7 @@ export async function registerForPushNotifications(uid: string): Promise<void> {
   } catch {}
 }
 
-// ── Native: send message push notification ───────────────────────────────────
+// ── Send push notifications ───────────────────────────────────────────────────
 
 export async function sendPushNotification(
   toUid: string,
@@ -66,8 +82,6 @@ export async function sendPushNotification(
     });
   } catch {}
 }
-
-// ── Native: send call push notification ──────────────────────────────────────
 
 export async function sendCallPushNotification(
   toUid: string,
@@ -97,7 +111,7 @@ export async function sendCallPushNotification(
   } catch {}
 }
 
-// ── Web: browser Notification API ───────────────────────────────────────────
+// ── Web notifications ─────────────────────────────────────────────────────────
 
 async function requestWebNotificationPermission(): Promise<void> {
   if (typeof window === 'undefined' || !('Notification' in window)) return;
@@ -113,7 +127,7 @@ function showWebNotification(title: string, body: string): void {
   new Notification(title, { body, icon: '/icon.png' });
 }
 
-// ── Web: listen for incoming messages via unread count changes ───────────────
+// ── Web: listen for incoming messages ────────────────────────────────────────
 
 let _prevUnread: Record<string, number> = {};
 let _initialized = false;
@@ -131,7 +145,6 @@ export function listenForIncomingMessages(
       const data = d.data();
       const uid = d.id;
       const unread: number = data.unreadCount ?? 0;
-
       if (_initialized) {
         const prev = _prevUnread[uid] ?? 0;
         if (unread > prev && data.lastSenderId !== myUid) {
@@ -149,16 +162,10 @@ export function listenForIncomingMessages(
 export async function showLocalNotification(
   title: string,
   body: string,
-  senderUid: string
+  _senderUid: string
 ): Promise<void> {
   if (Platform.OS === 'web') {
     showWebNotification(title, body);
-  } else {
-    try {
-      await Notifications.scheduleNotificationAsync({
-        content: { title, body, data: { senderUid }, sound: 'default' },
-        trigger: null,
-      });
-    } catch {}
   }
+  // Android: handled via Firestore-based in-app overlay
 }

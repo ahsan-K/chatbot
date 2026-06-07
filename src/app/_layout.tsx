@@ -172,23 +172,21 @@ export default function RootLayout() {
   const { user } = useAuth();
   const [incomingCall, setIncomingCall] = useState<CallData | null>(null);
 
-  // Request permissions + register call notification category
+  // Request permissions + register notification category (iOS only for categories)
   useEffect(() => {
     requestAppPermissions();
-    if (Platform.OS !== 'web') {
+    if (Platform.OS === 'ios') {
       Notifications.setNotificationCategoryAsync('INCOMING_CALL', [
         { identifier: 'ACCEPT', buttonTitle: '✅ Accept', options: { opensAppToForeground: true } },
         { identifier: 'DECLINE', buttonTitle: '❌ Decline', options: { opensAppToForeground: false } },
       ]).catch(() => {});
-      Notifications.setNotificationChannelAsync('calls', {
-        name: 'Calls', importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 500, 500, 500], lightColor: '#0059f7',
-      }).catch(() => {});
     }
+    // Android channels set up via @react-native-firebase/messaging
   }, []);
 
-  // Handle notification taps and actions
+  // Handle notification taps — iOS only (Android uses @react-native-firebase background handler)
   useEffect(() => {
+    if (Platform.OS === 'android') return;
     const sub = Notifications.addNotificationResponseReceivedListener(response => {
       const data = response.notification.request.content.data;
       const action = response.actionIdentifier;
