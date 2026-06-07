@@ -1,3 +1,6 @@
+import Constants from 'expo-constants';
+import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
 import { collection, doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { Platform } from 'react-native';
 
@@ -5,18 +8,37 @@ import { db } from '@/config/firebase';
 
 // ── Native: register push token ──────────────────────────────────────────────
 
-export async function registerForPushNotifications(_uid: string): Promise<void> {
+export async function registerForPushNotifications(uid: string): Promise<void> {
   if (Platform.OS === 'web') {
     await requestWebNotificationPermission();
     return;
   }
-  // Android: expo-notifications requires Firebase Messaging SDK to be initialized.
-  // Notification channels and local notifications handled via in-app Firestore listeners.
-  // To enable background push: ensure Firebase Cloud Messaging is enabled in Firebase Console
-  // and FCM V1 credentials are configured via: eas credentials -p android
+  if (!Device.isDevice) return;
+
+  // Set up notification channels
+  if (Platform.OS === 'android') {
+    Notifications.setNotificationChannelAsync('messages', {
+      name: 'Messages', importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250], lightColor: '#0059f7', sound: 'default',
+    }).catch(() => {});
+    Notifications.setNotificationChannelAsync('calls', {
+      name: 'Calls', importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 500, 500, 500], lightColor: '#0059f7', sound: 'default',
+    }).catch(() => {});
+  }
+
+  // Register Expo Push Token (requires @react-native-firebase/app for Android)
+  try {
+    await Notifications.requestPermissionsAsync();
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+    if (tokenData?.data) {
+      await setDoc(doc(db, 'users', uid), { expoPushToken: tokenData.data }, { merge: true });
+    }
+  } catch {}
 }
 
-// ── Native: send push to another user via Expo Push API ─────────────────────
+// ── Native: send message push notification ───────────────────────────────────
 
 export async function sendPushNotification(
   toUid: string,
@@ -122,15 +144,21 @@ export function listenForIncomingMessages(
   });
 }
 
-// ── Unified: show notification ────────────────────────────────────────────────
+// ── Unified: show local notification ─────────────────────────────────────────
 
 export async function showLocalNotification(
   title: string,
   body: string,
-  _senderUid: string
+  senderUid: string
 ): Promise<void> {
   if (Platform.OS === 'web') {
     showWebNotification(title, body);
+  } else {
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: { title, body, data: { senderUid }, sound: 'default' },
+        trigger: null,
+      });
+    } catch {}
   }
-  // Android: notifications shown via in-app overlay (Firestore-based)
 }
