@@ -27,10 +27,15 @@ export async function registerForPushNotifications(uid: string): Promise<void> {
     }).catch(() => {});
   }
 
-  // NOTE: Push token registration requires Firebase Cloud Messaging to be enabled.
-  // To enable: Firebase Console → Project Settings → Cloud Messaging → Enable FCM API
-  // Then: eas push:android:upload --fcm-v1-service-account-key-path ./service-account.json
-  // Until then, background push notifications are disabled to prevent app crashes.
+  // Register for push notifications (FCM credentials now configured via EAS)
+  try {
+    await Notifications.requestPermissionsAsync();
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+    if (tokenData?.data) {
+      await setDoc(doc(db, 'users', uid), { expoPushToken: tokenData.data }, { merge: true });
+    }
+  } catch {}
 }
 
 // ── Native: send push to another user via Expo Push API ─────────────────────
